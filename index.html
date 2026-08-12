@@ -318,7 +318,6 @@ const screens = [
           </div>
         </div>
 
-        <div class="why-box"><b>Ending the shared goal is different from leaving it.</b> Any member can redeem their own holdings and exit anytime, no one else is affected. But dissolving the barkada's shared goal itself needs a unanimous vote from everyone still in it.</div>
       </div>
       <div style="padding:14px 20px 14px;"><button class="btn" data-goto="dashboard">Continue to Dashboard</button></div>
       ${tabbarHtml('members')}
@@ -473,6 +472,11 @@ function wireScreenInteractions(){
     btn.onclick = openSidebar;
   });
 
+  document.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('focus', ()=> setTimeout(fitPhoneToViewport, 300));
+    inp.addEventListener('blur', ()=> setTimeout(fitPhoneToViewport, 300));
+  });
+
   if (id === 'goal'){
     document.getElementById('goalNameInput').addEventListener('input', (e)=>{
       state.goalName = e.target.value;
@@ -555,10 +559,17 @@ document.getElementById('closeSidebarBtn').onclick = closeSidebar;
 function fitPhoneToViewport(){
   const wrap = document.querySelector('.phone-wrap');
   const PHONE_W = 375, PHONE_H = 812, MARGIN = 24;
-  const scale = Math.min(1, (window.innerWidth - MARGIN*2) / PHONE_W, (window.innerHeight - MARGIN*2) / PHONE_H);
+  const vv = window.visualViewport;
+  const availW = (vv ? vv.width : window.innerWidth) - MARGIN*2;
+  const availH = (vv ? vv.height : window.innerHeight) - MARGIN*2;
+  const scale = Math.min(1, availW / PHONE_W, availH / PHONE_H);
   wrap.style.transform = `scale(${scale})`;
 }
 window.addEventListener('resize', fitPhoneToViewport);
+if (window.visualViewport){
+  window.visualViewport.addEventListener('resize', fitPhoneToViewport);
+  window.visualViewport.addEventListener('scroll', fitPhoneToViewport);
+}
 fitPhoneToViewport();
 
 renderScreen();
