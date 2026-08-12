@@ -138,6 +138,20 @@
   .remove-btn{ width:24px; height:24px; border-radius:50%; border:1px solid var(--hair); background:var(--paper); font-size:12px; color:var(--ink-soft); cursor:pointer; display:flex; align-items:center; justify-content:center; }
   .why-box{ background:#F4EFE6; border-radius:12px; padding:12px 14px; font-size:11.5px; color:var(--ink-soft); line-height:1.55; margin-bottom:16px; }
   .why-box b{ color:var(--ink); }
+
+  .sidebar-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.45); opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:40; }
+  .sidebar-backdrop.open{ opacity:1; pointer-events:auto; }
+  .sidebar{ position:absolute; top:0; left:0; bottom:0; width:78%; max-width:280px; background:var(--paper); z-index:50; transform:translateX(-100%); transition:transform .25s ease; display:flex; flex-direction:column; box-shadow:8px 0 24px rgba(0,0,0,.2); }
+  .sidebar.open{ transform:translateX(0); }
+  .sidebar-head{ display:flex; align-items:center; justify-content:space-between; padding:20px 16px 14px; border-bottom:1px solid var(--hair); flex-shrink:0; }
+  .sidebar-head .brand{ display:flex; align-items:center; gap:8px; }
+  .sidebar-head .brand-name{ font-size:13.5px; font-weight:800; letter-spacing:-.01em; }
+  .sidebar-head .brand-name span{ color:var(--red); }
+  .sidebar-nav{ flex:1; overflow-y:auto; padding:10px; }
+  .sidebar-item{ display:flex; align-items:center; gap:12px; padding:12px 12px; border-radius:12px; font-size:13px; font-weight:800; color:var(--ink-soft); cursor:pointer; margin-bottom:2px; transition:.15s; }
+  .sidebar-item .si-icon{ font-size:16px; width:20px; text-align:center; }
+  .sidebar-item:hover{ background:var(--cream); }
+  .sidebar-item.active{ background:#FDF1F1; color:var(--red); }
 </style>
 </head>
 <body>
@@ -148,6 +162,14 @@
       <div class="notch"></div>
       <div class="statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
       <div id="screen-root"></div>
+      <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-head">
+          <div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div>
+          <div class="icon-btn" id="closeSidebarBtn">✕</div>
+        </div>
+        <div class="sidebar-nav" id="sidebarNav"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -195,7 +217,7 @@ function contributionsSummary(){
 const screens = [
   { id:'onboard', label:'Onboarding Quiz',
     render: () => `
-      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn">✕</div></div>
+      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
         <div class="progress-dots"><div class="done"></div><div class="done"></div><div></div><div></div></div>
         <div class="eyebrow">Question 2 of 4</div>
@@ -210,7 +232,7 @@ const screens = [
 
   { id:'goal', label:'Set Investment Goal',
     render: () => `
-      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div></div>
+      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
         <div class="eyebrow">Set your goal</div>
         <div class="h2">What are you investing for?</div>
@@ -243,7 +265,7 @@ const screens = [
 
   { id:'members', label:'Add Members',
     render: () => `
-      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div></div>
+      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
         <div class="eyebrow">Grow your barkada</div>
         <div class="h2">Invite friends to "${escapeHtml(state.goalName || 'your goal')}"</div>
@@ -291,7 +313,7 @@ const screens = [
       const shown = state.members.slice(0,3);
       const extra = state.members.length - shown.length;
       return `
-      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn">🔔</div></div>
+      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
         <div class="barkada-widget">
           <div class="bw-top">
@@ -319,7 +341,7 @@ const screens = [
 
   { id:'buy', label:'Add Funds',
     render: () => `
-      <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Add Funds</div><div style="width:32px;"></div></div>
+      <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Add Funds</div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
         <div class="amount-display"><div class="cur">PHP</div><div class="num">500</div><p class="muted">Contributing to <b>${escapeHtml(state.goalName || 'your goal')}</b></p></div>
         <div class="toggle-row"><div class="t">One-time</div><div class="t on">Monthly auto-debit</div></div>
@@ -332,7 +354,7 @@ const screens = [
 
   { id:'monitor', label:'Monitor Holdings',
     render: () => `
-      <div class="appbar"><div class="icon-btn" data-goto="dashboard">←</div><div class="brand-name">Your Portfolio</div><div class="icon-btn">⋯</div></div>
+      <div class="appbar"><div class="icon-btn" data-goto="dashboard">←</div><div class="brand-name">Your Portfolio</div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
         <div class="card"><div class="eyebrow">Total Value</div><div class="h2" style="font-size:26px;">₱3,820.50</div><div class="gain" style="color:var(--green); font-size:12px; font-weight:800;">▲ ₱154.20 (4.2%) · 1 Year View</div></div>
         <div class="switch-row"><span style="font-size:12.5px; font-weight:800;">Advanced view</span><div class="switch on"></div></div>
@@ -361,7 +383,7 @@ const screens = [
     render: () => {
       const { available, lockedTotal, soonest, soonestDaysLeft } = contributionsSummary();
       return `
-      <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Redeem Funds</div><div style="width:32px;"></div></div>
+      <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Redeem Funds</div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
         <div class="note" style="background:#FBEAEA; border-color:#EFC2C2; color:var(--red-dark);">🔒 Each contribution unlocks 90 days after its own investment date — your portfolio doesn't lock or unlock all at once.</div>
         <div class="card"><div class="eyebrow">Available to withdraw</div><div class="h2" style="font-size:24px; color:var(--green);">${moneyExact(available)}</div><p class="muted" style="margin-top:6px;">From contributions already past their 90-day lock.</p></div>
@@ -373,6 +395,15 @@ const screens = [
       </div>
       <div style="padding:14px 20px 22px;"><button class="btn" data-goto="monitor">Redeem ${moneyExact(available)}</button><button class="btn ghost" style="margin-top:10px;">Vote to End Barkada Goal</button></div>
     `;}},
+];
+
+const SIDEBAR_ITEMS = [
+  { id:'dashboard', icon:'🏠', label:'Home' },
+  { id:'goal',      icon:'🎯', label:'Set Goal' },
+  { id:'members',   icon:'👥', label:'Barkada Members' },
+  { id:'monitor',   icon:'💰', label:'Portfolio' },
+  { id:'buy',       icon:'➕', label:'Add Funds' },
+  { id:'redeem',    icon:'🔄', label:'Redeem' },
 ];
 
 function inviteCode(){
@@ -393,14 +424,37 @@ function goToScreen(id){
 
 function renderScreen(){
   root.innerHTML = currentScreen().render();
+  renderSidebar();
   wireScreenInteractions();
+}
+
+function renderSidebar(){
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = SIDEBAR_ITEMS.map(item=>`
+    <div class="sidebar-item ${currentScreen().id===item.id?'active':''}" data-goto="${item.id}">
+      <span class="si-icon">${item.icon}</span><span>${item.label}</span>
+    </div>
+  `).join('');
+}
+
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarBackdrop').classList.add('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
 }
 
 function wireScreenInteractions(){
   const id = currentScreen().id;
 
   document.querySelectorAll('[data-goto]').forEach(el=>{
-    el.onclick = ()=> goToScreen(el.dataset.goto);
+    el.onclick = ()=>{ goToScreen(el.dataset.goto); closeSidebar(); };
+  });
+
+  document.querySelectorAll('.hamburger-btn').forEach(btn=>{
+    btn.onclick = openSidebar;
   });
 
   if (id === 'goal'){
@@ -455,6 +509,9 @@ function updatePreview(){
   box.querySelector('.gp-name').textContent = '🎯 ' + (state.goalName || 'Untitled Goal');
   box.querySelector('.gp-amt').textContent = `${money(state.targetAmount)} target · ${tf.label} pathway (${tf.equities}% equities)`;
 }
+
+document.getElementById('sidebarBackdrop').onclick = closeSidebar;
+document.getElementById('closeSidebarBtn').onclick = closeSidebar;
 
 renderScreen();
 </script>
