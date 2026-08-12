@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BPI Barkada FUNd — Interactive Mockup</title>
+<style>
+  :root{
+    --red:#A6192E; --red-dark:#7C1121; --cream:#FBF7F1; --paper:#FFFFFF;
+    --ink:#241C1B; --ink-soft:#6B615E; --hair:#EAE2DA; --gold:#D9A441;
+    --green:#2F7A4D; --green-bg:#E9F3EC;
+  }
+  *{box-sizing:border-box; -webkit-font-smoothing:antialiased;}
+  body{ margin:0; background:#EDE7DE; font-family:'Manrope','Segoe UI',system-ui,sans-serif; color:var(--ink); display:flex; flex-direction:column; align-items:center; padding:28px 16px 64px; }
+  h1.page-title{font-size:15px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; margin:0 0 4px;}
+  p.page-sub{margin:0 0 18px; color:var(--ink-soft); font-size:13px; text-align:center; max-width:420px;}
+
+  .collab-bar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; background:var(--paper); border:1px solid var(--hair); border-radius:14px; padding:10px 14px; margin-bottom:16px; max-width:420px; width:100%; }
+  .name-input{ border:1.5px solid var(--hair); border-radius:10px; padding:7px 10px; font-family:inherit; font-size:12.5px; font-weight:700; width:120px; outline:none; }
+  .name-input:focus{ border-color:var(--red); }
+  .presence{ display:flex; align-items:center; }
+  .presence .pav{ width:24px; height:24px; border-radius:50%; margin-left:-7px; border:2px solid var(--paper); display:flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:800; color:#fff; }
+  .presence .pav:first-child{ margin-left:0; }
+  .presence-label{ font-size:10.5px; color:var(--ink-soft); font-weight:700; margin-left:4px;}
+  .save-status{ font-size:10px; color:var(--ink-soft); font-weight:700; margin-left:auto; }
+
+  .switcher{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:20px; max-width:460px; }
+  .switcher button{ border:1px solid var(--hair); background:var(--paper); color:var(--ink-soft); font-family:inherit; font-size:11px; font-weight:700; padding:7px 11px; border-radius:999px; cursor:pointer; transition:.15s; letter-spacing:.02em; position:relative; }
+  .switcher button.active{ background:var(--red); color:#fff; border-color:var(--red);}
+  .switcher button:hover:not(.active){ border-color:var(--red); color:var(--red); }
+  .switcher .step-num{ opacity:.6; margin-right:5px; font-weight:800;}
+  .switcher .badge{ display:inline-block; min-width:15px; height:15px; padding:0 4px; border-radius:999px; background:var(--gold); color:#4A3200; font-size:9px; font-weight:800; margin-left:5px; line-height:15px; text-align:center; }
+
+  .comment-toggle{ display:flex; align-items:center; gap:6px; background:var(--paper); border:1.5px solid var(--hair); border-radius:999px; padding:8px 16px; font-size:12.5px; font-weight:800; cursor:pointer; margin-bottom:14px; color:var(--ink-soft); transition:.15s; }
+  .comment-toggle.active{ border-color:var(--red); color:var(--red); background:#FDF1F1; }
+
+  .phone-wrap{ position:relative; }
+  .phone{ width:375px; height:812px; background:#0B0B0C; border-radius:52px; padding:14px; box-shadow: 0 30px 60px -20px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.05); }
+  .screen{ width:100%; height:100%; background:var(--cream); border-radius:38px; overflow:hidden; position:relative; display:flex; flex-direction:column; }
+  .notch{ position:absolute; top:14px; left:50%; transform:translateX(-50%); width:120px; height:26px; background:#0B0B0C; border-radius:20px; z-index:20; }
+  .statusbar{ height:46px; display:flex; align-items:flex-end; justify-content:space-between; padding:0 26px 8px; font-size:13px; font-weight:700; color:var(--ink); flex-shrink:0; }
+  .appbar{ padding:2px 20px 14px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; }
+  .appbar .brand{ display:flex; align-items:center; gap:8px; }
+  .appbar .logo{ width:26px; height:26px; border-radius:7px; background:var(--red); display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:800; }
+  .appbar .brand-name{ font-size:14px; font-weight:800; letter-spacing:-.01em;}
+  .appbar .brand-name span{ color:var(--red); }
+  .content{ flex:1; overflow-y:auto; padding:4px 20px 20px; }
+  .content::-webkit-scrollbar{display:none;}
+
+  .card{ background:var(--paper); border-radius:18px; padding:18px; border:1px solid var(--hair); margin-bottom:14px; }
+  .eyebrow{ font-size:10.5px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 6px;}
+  .h2{ font-size:19px; font-weight:800; letter-spacing:-.01em; margin:0 0 4px;}
+  .muted{ color:var(--ink-soft); font-size:12.5px; line-height:1.5; margin:0;}
+  .btn{ display:block; width:100%; text-align:center; border:none; cursor:pointer; background:var(--red); color:#fff; font-family:inherit; font-weight:800; font-size:14px; padding:14px; border-radius:14px; letter-spacing:.01em; }
+  .btn.secondary{ background:var(--paper); color:var(--red); border:1.5px solid var(--red); }
+  .btn.ghost{ background:transparent; color:var(--ink-soft); border:1.5px solid var(--hair); }
+  .pill{ display:inline-block; font-size:10.5px; font-weight:800; padding:4px 10px; border-radius:999px; background:var(--green-bg); color:var(--green); letter-spacing:.03em; }
+
+  .progress-dots{ display:flex; gap:5px; margin-bottom:18px; }
+  .progress-dots div{ height:4px; flex:1; background:var(--hair); border-radius:4px;}
+  .progress-dots div.done{ background:var(--red); }
+  .quiz-q{ font-size:20px; font-weight:800; line-height:1.3; margin:8px 0 20px;}
+  .opt{ background:var(--paper); border:1.5px solid var(--hair); border-radius:14px; padding:14px 16px; margin-bottom:10px; font-size:13.5px; font-weight:700; display:flex; align-items:center; justify-content:space-between; }
+  .opt.sel{ border-color:var(--red); background:#FDF1F1; color:var(--red-dark); }
+  .opt .radio{ width:18px; height:18px; border-radius:50%; border:2px solid var(--hair); flex-shrink:0;}
+  .opt.sel .radio{ border-color:var(--red); background:radial-gradient(var(--red) 0 40%, transparent 42%);}
+
+  .path-card{ border:1.5px solid var(--hair); border-radius:16px; padding:14px; margin-bottom:10px; }
+  .path-card.chosen{ border-color:var(--gold); background:#FEFAF0; }
+  .path-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;}
+  .path-name{ font-weight:800; font-size:14px; }
+  .path-tag{ font-size:10px; font-weight:800; color:var(--ink-soft);}
+  .bar-track{ height:6px; background:var(--hair); border-radius:6px; overflow:hidden; margin-top:8px;}
+  .bar-fill{ height:100%; border-radius:6px; }
+
+  .barkada-widget{ background: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%); border-radius:20px; padding:20px; color:#fff; margin-bottom:14px; position:relative; overflow:hidden; }
+  .barkada-widget::after{ content:""; position:absolute; right:-30px; top:-30px; width:120px; height:120px; background:rgba(255,255,255,.08); border-radius:50%; }
+  .bw-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;}
+  .bw-label{ font-size:10.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; opacity:.8;}
+  .bw-goal{ font-size:16px; font-weight:800; margin-top:2px;}
+  .avatars{ display:flex; }
+  .avatars .av{ width:26px; height:26px; border-radius:50%; border:2px solid var(--red); background:var(--gold); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; color:var(--red-dark); margin-left:-8px; }
+  .avatars .av:first-child{ margin-left:0; }
+  .bw-amounts{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;}
+  .bw-current{ font-size:24px; font-weight:800; }
+  .bw-target{ font-size:12px; opacity:.85; font-weight:700;}
+  .bw-track{ height:8px; background:rgba(255,255,255,.25); border-radius:8px; overflow:hidden;}
+  .bw-fill{ height:100%; background:var(--gold); border-radius:8px; }
+  .bw-foot{ display:flex; justify-content:space-between; margin-top:10px; font-size:11px; font-weight:700; opacity:.9;}
+
+  .portfolio-card{ display:flex; justify-content:space-between; align-items:center; }
+  .portfolio-card .val{ font-size:22px; font-weight:800; }
+  .portfolio-card .gain{ color:var(--green); font-size:12px; font-weight:800; }
+
+  .activity-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--hair);}
+  .activity-row:first-of-type{ border-top:none; }
+  .activity-av{ width:32px; height:32px; border-radius:50%; background:var(--gold); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:var(--red-dark);}
+  .activity-text{ font-size:12.5px; font-weight:700; flex:1; }
+  .activity-text b{ color:var(--ink); }
+  .activity-time{ font-size:10.5px; color:var(--ink-soft); font-weight:700;}
+
+  .tabbar{ display:flex; justify-content:space-around; align-items:center; padding:12px 10px 10px; border-top:1px solid var(--hair); background:var(--paper); flex-shrink:0; }
+  .tab{ display:flex; flex-direction:column; align-items:center; gap:4px; font-size:9.5px; font-weight:800; color:var(--ink-soft);}
+  .tab.active{ color:var(--red); }
+
+  .amount-display{ text-align:center; padding:28px 0 18px; }
+  .amount-display .cur{ font-size:14px; color:var(--ink-soft); font-weight:700;}
+  .amount-display .num{ font-size:44px; font-weight:800; letter-spacing:-.02em;}
+  .keypad{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px;}
+  .key{ text-align:center; padding:12px 0; font-size:18px; font-weight:800; background:var(--paper); border:1px solid var(--hair); border-radius:12px;}
+  .toggle-row{ display:flex; gap:8px; margin-bottom:14px;}
+  .toggle-row .t{ flex:1; text-align:center; padding:10px; border-radius:12px; font-size:12px; font-weight:800; border:1.5px solid var(--hair); color:var(--ink-soft);}
+  .toggle-row .t.on{ border-color:var(--red); color:var(--red); background:#FDF1F1;}
+
+  .switch-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .switch{ width:38px; height:22px; background:var(--hair); border-radius:20px; position:relative;}
+  .switch.on{ background:var(--red); }
+  .switch::after{ content:""; position:absolute; top:2px; left:2px; width:18px; height:18px; background:#fff; border-radius:50%; }
+  .switch.on::after{ left:18px; }
+  .holding-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid var(--hair); font-size:12.5px;}
+  .holding-row:first-of-type{ border-top:none; }
+  .holding-name{ font-weight:800; }
+  .holding-sub{ color:var(--ink-soft); font-size:10.5px; font-weight:700;}
+  .holding-val{ text-align:right; font-weight:800; }
+  .holding-gain{ color:var(--green); font-size:10.5px; font-weight:700;}
+
+  .note{ background:#FDF6E8; border:1px solid #F0DFB0; border-radius:12px; padding:12px 14px; font-size:11.5px; color:#8A6A1E; font-weight:700; line-height:1.5; margin-bottom:14px; }
+  .icon-btn{ width:32px; height:32px; border-radius:10px; background:var(--paper); border:1px solid var(--hair); display:flex; align-items:center; justify-content:center; font-size:14px; }
+
+  /* interactive form bits */
+  .field-label{ font-size:11px; font-weight:800; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; margin:14px 0 6px; }
+  .field-label:first-of-type{ margin-top:0; }
+  .text-field{ width:100%; border:1.5px solid var(--hair); border-radius:12px; padding:12px 14px; font-family:inherit; font-size:14px; font-weight:700; outline:none; background:var(--paper); }
+  .text-field:focus{ border-color:var(--red); }
+  .amount-field-wrap{ display:flex; align-items:center; border:1.5px solid var(--hair); border-radius:12px; padding:0 14px; background:var(--paper); }
+  .amount-field-wrap span{ font-weight:800; color:var(--ink-soft); font-size:14px; }
+  .amount-field-wrap input{ border:none; outline:none; font-family:inherit; font-weight:800; font-size:14px; padding:12px 8px; width:100%; background:transparent; }
+  .amount-field-wrap:focus-within{ border-color:var(--red); }
+  .timeframe-row{ display:flex; gap:8px; }
+  .tf-card{ flex:1; border:1.5px solid var(--hair); border-radius:14px; padding:12px 8px; text-align:center; cursor:pointer; background:var(--paper); }
+  .tf-card.sel{ border-color:var(--red); background:#FDF1F1; }
+  .tf-name{ font-size:12.5px; font-weight:800; }
+  .tf-sub{ font-size:9.5px; color:var(--ink-soft); font-weight:700; margin-top:2px; }
+  .tf-card.sel .tf-sub{ color:var(--red); }
+  .goal-preview{ background:linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%); border-radius:16px; padding:16px; color:#fff; margin:16px 0; }
+  .goal-preview .gp-label{ font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; opacity:.8;}
+  .goal-preview .gp-name{ font-size:17px; font-weight:800; margin:2px 0 6px;}
+  .goal-preview .gp-amt{ font-size:12px; font-weight:700; opacity:.9;}
+
+  .invite-box{ background:var(--paper); border:1.5px dashed var(--hair); border-radius:14px; padding:14px; text-align:center; margin-bottom:16px;}
+  .invite-code{ font-size:18px; font-weight:800; letter-spacing:.04em; color:var(--red); margin:4px 0 10px;}
+  .add-member-row{ display:flex; gap:8px; margin-bottom:14px; }
+  .add-member-row .text-field{ flex:1; }
+  .add-btn{ background:var(--red); color:#fff; border:none; border-radius:12px; padding:0 16px; font-family:inherit; font-weight:800; font-size:13px; cursor:pointer; }
+  .member-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--hair); }
+  .member-row:first-of-type{ border-top:none; }
+  .member-av{ width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff; flex-shrink:0; }
+  .member-name{ flex:1; font-size:13px; font-weight:800; }
+  .member-you{ font-size:9.5px; color:var(--ink-soft); font-weight:700; }
+  .remove-btn{ width:24px; height:24px; border-radius:50%; border:1px solid var(--hair); background:var(--paper); font-size:12px; color:var(--ink-soft); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .why-box{ background:#F4EFE6; border-radius:12px; padding:12px 14px; font-size:11.5px; color:var(--ink-soft); line-height:1.55; margin-bottom:16px; }
+  .why-box b{ color:var(--ink); }
+
+  .pin-layer{ position:absolute; inset:14px; border-radius:38px; z-index:15; }
+  .pin-layer.mode-on{ cursor:crosshair; }
+  .pin{ position:absolute; width:26px; height:26px; border-radius:50% 50% 50% 4px; background:var(--red); color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; transform:translate(-50%,-100%) rotate(-45deg); box-shadow:0 3px 8px rgba(0,0,0,.3); cursor:pointer; z-index:16; }
+  .pin span{ transform:rotate(45deg); }
+  .pin.resolved{ background:var(--ink-soft); opacity:.55; }
+  .compose-card{ position:absolute; z-index:30; width:210px; background:var(--paper); border:1px solid var(--hair); border-radius:14px; padding:12px; box-shadow:0 12px 30px rgba(0,0,0,.25); }
+  .compose-card textarea{ width:100%; height:60px; border:1px solid var(--hair); border-radius:10px; padding:8px; font-family:inherit; font-size:12px; resize:none; margin-bottom:8px; outline:none; }
+  .compose-card textarea:focus{ border-color:var(--red); }
+  .compose-row{ display:flex; gap:6px; }
+  .compose-row button{ flex:1; border:none; border-radius:10px; padding:8px; font-size:11.5px; font-weight:800; cursor:pointer; font-family:inherit; }
+  .compose-row .send{ background:var(--red); color:#fff; }
+  .compose-row .cancel{ background:var(--hair); color:var(--ink-soft); }
+
+  .comments-panel{ width:100%; max-width:420px; margin-top:16px; background:var(--paper); border:1px solid var(--hair); border-radius:16px; padding:14px 16px; }
+  .comments-panel .cp-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .comments-panel .cp-title{ font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); }
+  .comment-item{ display:flex; gap:10px; padding:10px 0; border-top:1px solid var(--hair); }
+  .comment-item:first-of-type{ border-top:none; }
+  .c-av{ width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800; color:#fff; }
+  .c-body{ flex:1; }
+  .c-name-row{ display:flex; justify-content:space-between; align-items:baseline; }
+  .c-name{ font-size:12px; font-weight:800; }
+  .c-time{ font-size:10px; color:var(--ink-soft); font-weight:700; }
+  .c-text{ font-size:12.5px; margin:2px 0 6px; line-height:1.4; }
+  .c-text.resolved-text{ text-decoration:line-through; color:var(--ink-soft); }
+  .c-resolve{ font-size:10.5px; font-weight:800; color:var(--red); cursor:pointer; background:none; border:none; padding:0; font-family:inherit; }
+  .c-resolve.done{ color:var(--ink-soft); }
+  .empty-state{ font-size:12px; color:var(--ink-soft); text-align:center; padding:14px 0; }
+  .caption-box{ max-width:375px; margin-top:14px; background:var(--paper); border:1px solid var(--hair); border-radius:14px; padding:14px 16px; font-size:12px; color:var(--ink-soft); line-height:1.55; }
+  .caption-box b{ color:var(--ink); }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">BPI Barkada FUNd — Interactive Mockup</h1>
+<p class="page-sub">Try it live: set an investment goal, add members, then see it reflected on the Home dashboard. Comments still sync for your team (~4s delay).</p>
+
+<div class="collab-bar">
+  <input class="name-input" id="nameInput" placeholder="Your name" maxlength="16">
+  <div class="presence" id="presenceRow"></div>
+  <span class="presence-label" id="presenceLabel"></span>
+  <span class="save-status" id="saveStatus"></span>
+</div>
+
+<div class="switcher" id="switcher"></div>
+<button class="comment-toggle" id="toggleComment">💬 Add Comment</button>
+
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="screen">
+      <div class="notch"></div>
+      <div class="statusbar"><span>9:41</span><span>●●● 5G 🔋</span></div>
+      <div id="screen-root"></div>
+    </div>
+  </div>
+  <div class="pin-layer" id="pinLayer"></div>
+</div>
+
+<div class="caption-box" id="caption"></div>
+<div class="comments-panel">
+  <div class="cp-head"><span class="cp-title">Comments on this screen</span><span class="cp-title" id="commentCount">0</span></div>
+  <div id="commentsList"></div>
+</div>
+
+<script>
+/* ---------- app state (drives the interactive screens) ---------- */
+const state = {
+  goalName: 'Boracay Trip',
+  targetAmount: 30000,
+  currentAmount: 18400,
+  timeframe: 'medium', // 'short' | 'medium' | 'long' — locked to 'medium' for now
+  shareAmounts: false, // off by default: activity is visible, exact contribution amounts are hidden
+  members: [
+    { name:'You', you:true },
+    { name:'Andrea' },
+    { name:'Jules' },
+  ],
+  contributions: [
+    { amount: 2820.50, daysAgo: 95 }, // unlocked (past 90 days)
+    { amount: 1000.00, daysAgo: 42 }, // still locked, 48 days left
+  ]
+};
+
+const TIMEFRAMES = {
+  short:  { label:'Short-Term',  sub:'1–2 yrs',   equities:100, fixed:0, money:0 },
+  medium: { label:'Medium-Term', sub:'3–5 yrs',   equities:100, fixed:0, money:0 },
+  long:   { label:'Long-Term',   sub:'5–10+ yrs', equities:100, fixed:0, money:0 },
+};
+
+/* ---------- collab session ---------- */
+const SESSION_ID = 'sess_' + Math.random().toString(36).slice(2, 10);
+let myName = '';
+const COLORS = ['#A6192E','#D9A441','#2F7A4D','#3B6EA5','#8A4EA6','#C46B2C'];
+function colorFor(name){ let h=0; for(const c of (name||'?')) h=(h*31+c.charCodeAt(0))%COLORS.length; return COLORS[Math.abs(h)%COLORS.length]; }
+function initials(name){ return (name||'?').trim().slice(0,1).toUpperCase() || '?'; }
+function timeAgo(ts){ const s=Math.floor((Date.now()-ts)/1000); if(s<60) return 'just now'; if(s<3600) return Math.floor(s/60)+'m ago'; if(s<86400) return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function money(n){ return '₱' + Number(n).toLocaleString('en-PH'); }
+function moneyExact(n){ const hasCents = Math.round(Number(n)*100) % 100 !== 0; return '₱' + Number(n).toLocaleString('en-PH', hasCents ? {minimumFractionDigits:2, maximumFractionDigits:2} : {maximumFractionDigits:0}); }
+function contributionsSummary(){
+  const available = state.contributions.filter(c=>c.daysAgo>=90).reduce((sum,c)=>sum+c.amount, 0);
+  const locked = state.contributions.filter(c=>c.daysAgo<90);
+  const lockedTotal = locked.reduce((sum,c)=>sum+c.amount, 0);
+  const soonest = locked.reduce((min,c)=> (!min || c.daysAgo>min.daysAgo) ? c : min, null);
+  return { available, lockedTotal, soonest, soonestDaysLeft: soonest ? 90 - soonest.daysAgo : null };
+}
+
+/* ---------- screens ---------- */
+const screens = [
+  { id:'onboard', label:'Onboarding Quiz',
+    caption:'<b>Account onboarding.</b> Existing BPI users skip KYC. A short quiz points each person toward a starting pathway — they can adjust it later when setting their actual goal.',
+    render: () => `
+      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn">✕</div></div>
+      <div class="content">
+        <div class="progress-dots"><div class="done"></div><div class="done"></div><div></div><div></div></div>
+        <div class="eyebrow">Question 2 of 4</div>
+        <div class="quiz-q">What are you and your barkada saving toward?</div>
+        <div class="opt"><span>A trip within 1–2 years</span><div class="radio"></div></div>
+        <div class="opt sel"><span>A big purchase in 3–5 years</span><div class="radio"></div></div>
+        <div class="opt"><span>Long-term growth, 5+ years</span><div class="radio"></div></div>
+        <div class="opt"><span>Not sure yet</span><div class="radio"></div></div>
+      </div>
+      <div style="padding:14px 20px 22px;"><button class="btn">Continue</button></div>
+    `},
+
+  { id:'goal', label:'Set Investment Goal',
+    caption:'<b>Why a goal at all?</b> A shared, named goal is what makes the barkada mechanic work — friends stay motivated by a concrete target ("Boracay Trip"), not an abstract instruction to "invest for retirement." Try changing the fields — the goal flows straight into the Home dashboard. Note: since this fund is 100% equities, the timeframe you pick sets your horizon and expectations, not a different asset mix — there\'s no bond/money-market blend to shift.',
+    render: () => `
+      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div></div>
+      <div class="content">
+        <div class="eyebrow">Set your goal</div>
+        <div class="h2">What are you investing for?</div>
+        <div class="why-box"><b>Why set a goal?</b> A named, shared goal turns investing into something concrete your barkada is working toward together — not just a number going up. Since the fund is fully equity-invested, your timeframe sets expectations for volatility and pacing, not a different bond/equity split — shorter horizons just mean less time to ride out swings before you need the money.</div>
+
+        <div class="field-label">Goal name</div>
+        <input class="text-field" id="goalNameInput" value="${escapeHtml(state.goalName)}" placeholder="e.g. Boracay Trip">
+
+        <div class="field-label">Target amount</div>
+        <div class="amount-field-wrap"><span>₱</span><input id="goalAmountInput" type="number" value="${state.targetAmount}" placeholder="30000"></div>
+
+        <div class="field-label">Timeframe</div>
+        <div class="timeframe-row" id="timeframeRow">
+          <div class="tf-card sel" data-tf="medium">
+            <div class="tf-name">${TIMEFRAMES.medium.label}</div>
+            <div class="tf-sub">${TIMEFRAMES.medium.sub}</div>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:6px;">Short- and Long-Term pathways are coming soon — Medium-Term is available now.</p>
+
+        <div class="goal-preview">
+          <div class="gp-label">Preview</div>
+          <div class="gp-name">🎯 ${escapeHtml(state.goalName || 'Untitled Goal')}</div>
+          <div class="gp-amt">${money(state.targetAmount)} target · ${TIMEFRAMES[state.timeframe].label} · 100% equities</div>
+        </div>
+        <p class="muted" style="text-align:center;">NAVPS ₱100 at launch · ₱500 minimum per member</p>
+      </div>
+      <div style="padding:14px 20px 22px;"><button class="btn" id="saveGoalBtn">Save Goal</button></div>
+    `},
+
+  { id:'members', label:'Add Members',
+    caption:'<b>How members get added.</b> The goal creator gets a shareable invite code. Anyone who enters it joins the same shared goal while keeping their own individual holdings — try adding a name below and watch the Home dashboard update.',
+    render: () => `
+      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div></div>
+      <div class="content">
+        <div class="eyebrow">Grow your barkada</div>
+        <div class="h2">Invite friends to "${escapeHtml(state.goalName || 'your goal')}"</div>
+        <p class="muted" style="margin-bottom:14px;">Target investors: groups of young (18-25), first-time Filipino investors — minimum 3 members per barkada.</p>
+
+        <div class="invite-box">
+          <div class="eyebrow" style="margin-bottom:2px;">Invite Code</div>
+          <div class="invite-code">${inviteCode()}</div>
+          <button class="btn secondary" id="copyInviteBtn" style="padding:10px;">Copy Invite Link</button>
+        </div>
+
+        <div class="field-label">Add a friend manually</div>
+        <div class="add-member-row">
+          <input class="text-field" id="memberNameInput" placeholder="Friend's name">
+          <button class="add-btn" id="addMemberBtn">Add</button>
+        </div>
+
+        <div class="card">
+          <div class="eyebrow">Barkada Members (${state.members.length}${state.members.length<3?' — need 3 minimum':''})</div>
+          <div id="memberList">
+            ${state.members.map((m,i)=>`
+              <div class="member-row">
+                <div class="member-av" style="background:${colorFor(m.name)}">${initials(m.name)}</div>
+                <div class="member-name">${escapeHtml(m.name)} ${m.you?'<span class="member-you">(you)</span>':''}</div>
+                ${!m.you ? `<button class="remove-btn" data-idx="${i}">×</button>` : ''}
+              </div>
+            `).join('')}
+          </div>
+          ${state.members.length<3?`<p class="muted" style="margin-top:8px; color:var(--red);">Add ${3-state.members.length} more member${3-state.members.length>1?'s':''} to start a barkada goal.</p>`:''}
+          <div class="switch-row" id="shareAmountsRow" style="margin-top:12px; padding-top:12px; border-top:1px solid var(--hair); cursor:pointer;">
+            <span style="font-size:12px; font-weight:800; max-width:230px;">Share my exact contribution amounts with the barkada</span>
+            <div class="switch ${state.shareAmounts?'on':''}" id="shareAmountsSwitch"></div>
+          </div>
+        </div>
+
+        <div class="why-box"><b>Ending the shared goal is different from leaving it.</b> Any member can redeem their own holdings and exit anytime, no one else is affected. But dissolving the barkada's shared goal itself needs a unanimous vote from everyone still in it.</div>
+      </div>
+    `},
+
+  { id:'dashboard', label:'Home Dashboard',
+    caption:'<b>Daily routine.</b> Everything here is pulled live from your goal and member list — go back and change the goal name, amount, or members, then return here to see it update.',
+    render: () => {
+      const tf = TIMEFRAMES[state.timeframe];
+      const pct = Math.min(100, Math.round((state.currentAmount/Math.max(1,state.targetAmount))*100));
+      const shown = state.members.slice(0,3);
+      const extra = state.members.length - shown.length;
+      return `
+      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn">🔔</div></div>
+      <div class="content">
+        <div class="barkada-widget">
+          <div class="bw-top">
+            <div><div class="bw-label">Barkada Goal</div><div class="bw-goal">🎯 ${escapeHtml(state.goalName || 'Untitled Goal')}</div></div>
+            <div class="avatars">${shown.map(m=>`<div class="av" style="background:${colorFor(m.name)}; color:#fff;">${initials(m.name)}</div>`).join('')}${extra>0?`<div class="av">+${extra}</div>`:''}</div>
+          </div>
+          <div class="bw-amounts"><div class="bw-current">${money(state.currentAmount)}</div><div class="bw-target">of ${money(state.targetAmount)} goal</div></div>
+          <div class="bw-track"><div class="bw-fill" style="width:${pct}%;"></div></div>
+          <div class="bw-foot"><span>${pct}% there</span><span>${state.members.length} members active</span></div>
+        </div>
+        <div class="card portfolio-card"><div><div class="eyebrow">Your Portfolio</div><div class="val">₱3,820.50</div><div class="gain">▲ 4.2% this month</div></div><div class="pill">${tf.label}</div></div>
+        ${pct>=50?`<div class="note" style="background:var(--green-bg); border-color:#B9DCC4; color:var(--green);">🎉 Milestone unlocked! Your barkada hit ${pct}% of your goal — cashback reward applied.</div>`:''}
+        <div class="card"><div class="eyebrow">Barkada Activity</div>
+          <div class="activity-row"><div class="activity-av">${initials(state.members[1]?.name || 'A')}</div><div class="activity-text"><b>${escapeHtml(state.members[1]?.name || 'Andrea')}</b> ${state.shareAmounts ? 'contributed ₱500' : 'contributed to the goal'}</div><div class="activity-time">2h ago</div></div>
+          <div class="activity-row"><div class="activity-av">${initials(state.members[2]?.name || 'J')}</div><div class="activity-text"><b>${escapeHtml(state.members[2]?.name || 'Jules')}</b> hit a 3-month streak 🔥</div><div class="activity-time">1d ago</div></div>
+        </div>
+      </div>
+      <div class="tabbar"><div class="tab active">🏠 <br>Home</div><div class="tab">🎯<br>Barkada</div><div class="tab">💰<br>Invest</div><div class="tab">👤<br>Profile</div></div>
+    `;}},
+
+  { id:'buy', label:'Add Funds',
+    caption:'<b>Buying.</b> A single amount entry, recurring auto-debit toggle, one tap to confirm — debited directly from the linked BPI account.',
+    render: () => `
+      <div class="appbar"><div class="icon-btn">←</div><div class="brand-name">Add Funds</div><div style="width:32px;"></div></div>
+      <div class="content">
+        <div class="amount-display"><div class="cur">PHP</div><div class="num">500</div><p class="muted">Contributing to <b>${escapeHtml(state.goalName || 'your goal')}</b></p></div>
+        <div class="toggle-row"><div class="t">One-time</div><div class="t on">Monthly auto-debit</div></div>
+        <div class="keypad"><div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key">4</div><div class="key">5</div><div class="key">6</div><div class="key">7</div><div class="key">8</div><div class="key">9</div><div class="key">₱</div><div class="key">0</div><div class="key">⌫</div></div>
+        <p class="muted" style="text-align:center;">Debited from BPI Savings •••• 4821</p>
+        <p class="muted" style="text-align:center; margin-top:6px;">🔒 This ₱500 contribution unlocks 90 days from today — earlier contributions may already be free to withdraw.</p>
+      </div>
+      <div style="padding:14px 20px 22px;"><button class="btn">Confirm ₱500 / month</button></div>
+    `},
+
+  { id:'monitor', label:'Monitor Holdings',
+    caption:'<b>Viewing holdings.</b> Simple view by default. The Advanced toggle reveals NAVPS and individual holdings.',
+    render: () => `
+      <div class="appbar"><div class="icon-btn">←</div><div class="brand-name">Your Portfolio</div><div class="icon-btn">⋯</div></div>
+      <div class="content">
+        <div class="card"><div class="eyebrow">Total Value</div><div class="h2" style="font-size:26px;">₱3,820.50</div><div class="gain" style="color:var(--green); font-size:12px; font-weight:800;">▲ ₱154.20 (4.2%) · 1 Year View</div></div>
+        <div class="switch-row"><span style="font-size:12.5px; font-weight:800;">Advanced view</span><div class="switch on"></div></div>
+        <div class="card"><div class="eyebrow">Top Holdings</div>
+          <div class="holding-row"><div><div class="holding-name">SM Investments</div><div class="holding-sub">PH · Conglomerate</div></div><div><div class="holding-val">₱612.10</div><div class="holding-gain">▲ 3.1%</div></div></div>
+          <div class="holding-row"><div><div class="holding-name">Jollibee Foods</div><div class="holding-sub">PH · Food Service</div></div><div><div class="holding-val">₱498.40</div><div class="holding-gain">▲ 2.4%</div></div></div>
+          <div class="holding-row"><div><div class="holding-name">7-Eleven (PH)</div><div class="holding-sub">PH · Retail</div></div><div><div class="holding-val">₱455.00</div><div class="holding-gain">▲ 5.8%</div></div></div>
+          <div class="holding-row"><div><div class="holding-name">Coca-Cola</div><div class="holding-sub">Global · Beverage</div></div><div><div class="holding-val">₱402.80</div><div class="holding-gain">▲ 1.7%</div></div></div>
+          <div class="holding-row"><div><div class="holding-name">Nike</div><div class="holding-sub">Global · Apparel/Lifestyle</div></div><div><div class="holding-val">₱366.20</div><div class="holding-gain">▲ 2.0%</div></div></div>
+          <div class="holding-row"><div><div class="holding-name">Visa</div><div class="holding-sub">Global · Payments/Fintech</div></div><div><div class="holding-val">₱310.90</div><div class="holding-gain">▲ 1.3%</div></div></div>
+        </div>
+      </div>
+      <div class="tabbar"><div class="tab">🏠 <br>Home</div><div class="tab">🎯<br>Barkada</div><div class="tab active">💰<br>Invest</div><div class="tab">👤<br>Profile</div></div>
+    `},
+
+  { id:'redeem', label:'Redeem',
+    caption:'<b>Redeeming.</b> A member redeems only their own holdings, never the group total. Each contribution unlocks 90 days after its own investment date, so part of a portfolio can be withdrawable while a more recent top-up is still locked. If a member exits fully, the barkada goal quietly recalculates.',
+    render: () => {
+      const { available, lockedTotal, soonest, soonestDaysLeft } = contributionsSummary();
+      return `
+      <div class="appbar"><div class="icon-btn">←</div><div class="brand-name">Redeem Funds</div><div style="width:32px;"></div></div>
+      <div class="content">
+        <div class="note" style="background:#FBEAEA; border-color:#EFC2C2; color:var(--red-dark);">🔒 Each contribution unlocks 90 days after its own investment date — your portfolio doesn't lock or unlock all at once.</div>
+        <div class="card"><div class="eyebrow">Available to withdraw</div><div class="h2" style="font-size:24px; color:var(--green);">${moneyExact(available)}</div><p class="muted" style="margin-top:6px;">From contributions already past their 90-day lock.</p></div>
+        <div class="card"><div class="eyebrow">Locked (still in 90-day period)</div><div class="h2" style="font-size:20px; opacity:.55;">${moneyExact(lockedTotal)}</div><p class="muted" style="margin-top:6px;">${soonest ? `Next ${moneyExact(soonest.amount)} unlocks in ${soonestDaysLeft} days` : 'Nothing currently locked.'}</p></div>
+        <div class="toggle-row"><div class="t on">Partial</div><div class="t">Full redemption</div></div>
+        <div class="amount-display" style="padding:14px 0;"><div class="cur">PHP</div><div class="num">${Number(available).toLocaleString('en-PH')}</div></div>
+        <p class="muted" style="text-align:center;">Proceeds sent to BPI Savings •••• 4821 · standard settlement timeline applies</p>
+        <p class="muted" style="text-align:center; margin-top:8px;">1.00% annual management fee applies. No early redemption fee — each contribution simply unlocks 90 days after its own date.</p>
+      </div>
+      <div style="padding:14px 20px 22px;"><button class="btn" id="confirmRedeemBtn">Redeem ${moneyExact(available)}</button><button class="btn ghost" style="margin-top:10px;">Vote to End Barkada Goal</button></div>
+    `;}},
+];
+
+function inviteCode(){
+  const slug = (state.goalName||'GOAL').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4) || 'GOAL';
+  return `${slug}-${state.timeframe.slice(0,2).toUpperCase()}26-JMA`;
+}
+
+let currentIdx = 3; // start on dashboard so the interactivity's effect is visible fast
+let commentMode = false;
+let composeAt = null;
+let commentsCache = {};
+
+const root = document.getElementById('screen-root');
+const switcher = document.getElementById('switcher');
+const caption = document.getElementById('caption');
+const pinLayer = document.getElementById('pinLayer');
+const commentsList = document.getElementById('commentsList');
+const commentCount = document.getElementById('commentCount');
+const saveStatus = document.getElementById('saveStatus');
+const nameInput = document.getElementById('nameInput');
+const toggleBtn = document.getElementById('toggleComment');
+
+function currentScreen(){ return screens[currentIdx]; }
+
+function renderSwitcher(){
+  switcher.innerHTML = '';
+  screens.forEach((s,i)=>{
+    const b = document.createElement('button');
+    const count = (commentsCache[s.id]||[]).filter(c=>!c.resolved).length;
+    b.className = i===currentIdx ? 'active' : '';
+    b.innerHTML = `<span class="step-num">${i+1}</span>${s.label}${count?`<span class="badge">${count}</span>`:''}`;
+    b.onclick = ()=>{ currentIdx = i; composeAt = null; renderAll(); };
+    switcher.appendChild(b);
+  });
+}
+
+function renderScreen(){
+  root.innerHTML = currentScreen().render();
+  caption.innerHTML = currentScreen().caption;
+  wireScreenInteractions();
+}
+
+function wireScreenInteractions(){
+  const id = currentScreen().id;
+
+  if (id === 'goal'){
+    document.getElementById('goalNameInput').addEventListener('input', (e)=>{
+      state.goalName = e.target.value;
+      updatePreview();
+    });
+    document.getElementById('goalAmountInput').addEventListener('input', (e)=>{
+      state.targetAmount = Number(e.target.value) || 0;
+      updatePreview();
+    });
+    document.getElementById('saveGoalBtn').onclick = ()=>{
+      currentIdx = screens.findIndex(s=>s.id==='dashboard');
+      renderAll();
+    };
+  }
+
+  if (id === 'members'){
+    document.getElementById('addMemberBtn').onclick = addMember;
+    document.getElementById('memberNameInput').addEventListener('keydown', (e)=>{
+      if (e.key === 'Enter') addMember();
+    });
+    document.querySelectorAll('.remove-btn').forEach(btn=>{
+      btn.onclick = ()=>{
+        state.members.splice(Number(btn.dataset.idx), 1);
+        renderScreen();
+      };
+    });
+    document.getElementById('copyInviteBtn').onclick = async (e)=>{
+      const btn = e.target;
+      try{ await navigator.clipboard.writeText(inviteCode()); }catch(err){}
+      const old = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(()=>btn.textContent = old, 1200);
+    };
+    document.getElementById('shareAmountsRow').onclick = ()=>{
+      state.shareAmounts = !state.shareAmounts;
+      document.getElementById('shareAmountsSwitch').classList.toggle('on', state.shareAmounts);
+      if (currentScreen().id === 'dashboard') renderScreen();
+    };
+  }
+}
+
+function addMember(){
+  const input = document.getElementById('memberNameInput');
+  const name = input.value.trim();
+  if (!name) return;
+  state.members.push({ name });
+  input.value = '';
+  renderScreen();
+}
+
+function updatePreview(){
+  const box = document.querySelector('.goal-preview');
+  if (!box) return;
+  const tf = TIMEFRAMES[state.timeframe];
+  box.querySelector('.gp-name').textContent = '🎯 ' + (state.goalName || 'Untitled Goal');
+  box.querySelector('.gp-amt').textContent = `${money(state.targetAmount)} target · ${tf.label} pathway (${tf.equities}% equities)`;
+}
+
+function renderPins(){
+  pinLayer.innerHTML = '';
+  pinLayer.className = 'pin-layer' + (commentMode ? ' mode-on' : '');
+  const list = commentsCache[currentScreen().id] || [];
+  list.forEach((c, i)=>{
+    const pin = document.createElement('div');
+    pin.className = 'pin' + (c.resolved ? ' resolved' : '');
+    pin.style.left = c.x + '%'; pin.style.top = c.y + '%';
+    pin.innerHTML = `<span>${i+1}</span>`;
+    pin.title = c.name + ': ' + c.text;
+    pin.onclick = (e)=>{ e.stopPropagation(); document.getElementById('c-'+c.id)?.scrollIntoView({behavior:'smooth', block:'center'}); };
+    pinLayer.appendChild(pin);
+  });
+  if (composeAt){
+    const box = document.createElement('div');
+    box.className = 'compose-card';
+    box.style.left = `calc(${composeAt.x}% - 20px)`;
+    box.style.top = `calc(${composeAt.y}% + 10px)`;
+    box.innerHTML = `<textarea id="composeText" placeholder="Leave a comment..." autofocus></textarea><div class="compose-row"><button class="cancel" id="composeCancel">Cancel</button><button class="send" id="composeSend">Post</button></div>`;
+    pinLayer.appendChild(box);
+    document.getElementById('composeCancel').onclick = ()=>{ composeAt = null; renderPins(); };
+    document.getElementById('composeSend').onclick = submitComment;
+    setTimeout(()=>document.getElementById('composeText')?.focus(), 30);
+  }
+}
+
+function renderComments(){
+  const list = commentsCache[currentScreen().id] || [];
+  commentCount.textContent = list.length;
+  if (!list.length){ commentsList.innerHTML = '<div class="empty-state">No comments yet on this screen. Toggle "Add Comment" and tap the phone to leave one.</div>'; return; }
+  commentsList.innerHTML = list.slice().sort((a,b)=>b.ts-a.ts).map(c=>`
+    <div class="comment-item" id="c-${c.id}">
+      <div class="c-av" style="background:${colorFor(c.name)}">${initials(c.name)}</div>
+      <div class="c-body">
+        <div class="c-name-row"><span class="c-name">${escapeHtml(c.name)}</span><span class="c-time">${timeAgo(c.ts)}</span></div>
+        <div class="c-text ${c.resolved?'resolved-text':''}">${escapeHtml(c.text)}</div>
+        <button class="c-resolve ${c.resolved?'done':''}" data-id="${c.id}">${c.resolved ? '✓ Resolved · undo' : 'Mark resolved'}</button>
+      </div>
+    </div>`).join('');
+  commentsList.querySelectorAll('.c-resolve').forEach(btn=>{ btn.onclick = ()=>toggleResolve(btn.dataset.id); });
+}
+
+function renderPresence(all){
+  const row = document.getElementById('presenceRow');
+  const label = document.getElementById('presenceLabel');
+  const cutoff = Date.now() - 15000;
+  const active = Object.entries(all||{}).filter(([id,p])=>p.ts > cutoff);
+  row.innerHTML = active.map(([id,p])=>`<div class="pav" style="background:${colorFor(p.name)}" title="${escapeHtml(p.name)}">${initials(p.name)}</div>`).join('');
+  label.textContent = active.length ? `${active.length} viewing now` : '';
+}
+
+function renderAll(){ renderSwitcher(); renderScreen(); renderPins(); renderComments(); }
+
+/* ---------- storage (comments + presence) ---------- */
+async function loadComments(screenId){
+  try{ const res = await window.storage.get('barkada-mock:comments:' + screenId, true); commentsCache[screenId] = res ? JSON.parse(res.value) : []; }
+  catch(e){ commentsCache[screenId] = commentsCache[screenId] || []; }
+}
+async function saveComments(screenId){
+  try{ saveStatus.textContent = 'Saving…'; await window.storage.set('barkada-mock:comments:' + screenId, JSON.stringify(commentsCache[screenId]), true); saveStatus.textContent = 'Saved'; setTimeout(()=>{ if(saveStatus.textContent==='Saved') saveStatus.textContent=''; }, 1500); }
+  catch(e){ saveStatus.textContent = 'Save failed — will retry'; }
+}
+async function refreshCurrentComments(){ const id = currentScreen().id; await loadComments(id); renderSwitcher(); renderPins(); renderComments(); }
+async function pushPresence(){
+  if (!myName) return;
+  try{
+    let all = {}; try{ const res = await window.storage.get('barkada-mock:presence', true); all = res ? JSON.parse(res.value) : {}; }catch(e){ all = {}; }
+    all[SESSION_ID] = { name: myName, screen: currentScreen().id, ts: Date.now() };
+    const cutoff = Date.now() - 30000; Object.keys(all).forEach(k=>{ if (all[k].ts < cutoff) delete all[k]; });
+    await window.storage.set('barkada-mock:presence', JSON.stringify(all), true);
+    renderPresence(all);
+  }catch(e){}
+}
+async function pollPresence(){ try{ const res = await window.storage.get('barkada-mock:presence', true); renderPresence(res ? JSON.parse(res.value) : {}); }catch(e){} }
+
+nameInput.addEventListener('input', ()=>{ myName = nameInput.value.trim(); });
+nameInput.addEventListener('blur', ()=>{ if(myName) pushPresence(); });
+
+toggleBtn.onclick = ()=>{
+  if (!myName){ nameInput.focus(); nameInput.style.borderColor = 'var(--red)'; return; }
+  commentMode = !commentMode;
+  toggleBtn.classList.toggle('active', commentMode);
+  composeAt = null;
+  renderPins();
+};
+
+pinLayer.addEventListener('click', (e)=>{
+  if (!commentMode) return;
+  if (e.target.closest('.compose-card') || e.target.closest('.pin')) return;
+  const rect = pinLayer.getBoundingClientRect();
+  const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+  const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+  composeAt = { x: Math.max(4,Math.min(96,xPct)), y: Math.max(4,Math.min(96,yPct)) };
+  renderPins();
+});
+
+async function submitComment(){
+  const text = document.getElementById('composeText').value.trim();
+  if (!text || !composeAt) return;
+  const id = currentScreen().id;
+  const comment = { id:'c_'+Math.random().toString(36).slice(2,9), name: myName || 'Anonymous', text, x: composeAt.x, y: composeAt.y, ts: Date.now(), resolved:false };
+  await loadComments(id);
+  commentsCache[id] = [...(commentsCache[id]||[]), comment];
+  await saveComments(id);
+  composeAt = null; commentMode = false; toggleBtn.classList.remove('active');
+  renderAll();
+}
+
+async function toggleResolve(id){
+  const screenId = currentScreen().id;
+  await loadComments(screenId);
+  commentsCache[screenId] = (commentsCache[screenId]||[]).map(c=> c.id===id ? {...c, resolved: !c.resolved} : c);
+  await saveComments(screenId);
+  renderPins(); renderComments();
+}
+
+async function init(){
+  for (const s of screens){ await loadComments(s.id); }
+  renderAll();
+  pollPresence();
+  setInterval(refreshCurrentComments, 4000);
+  setInterval(()=>{ if(myName) pushPresence(); else pollPresence(); }, 5000);
+}
+init();
+</script>
+
+</body>
+</html>
