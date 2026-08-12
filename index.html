@@ -10,9 +10,10 @@
     --green:#2F7A4D; --green-bg:#E9F3EC;
   }
   *{box-sizing:border-box; -webkit-font-smoothing:antialiased;}
-  body{ margin:0; background:#EDE7DE; font-family:'Manrope','Segoe UI',system-ui,sans-serif; color:var(--ink); display:flex; align-items:center; justify-content:center; min-height:100vh; padding:28px 16px; }
+  html, body{ margin:0; height:100%; overflow:hidden; }
+  body{ background:#EDE7DE; font-family:'Manrope','Segoe UI',system-ui,sans-serif; color:var(--ink); display:flex; align-items:center; justify-content:center; }
 
-  .phone-wrap{ position:relative; }
+  .phone-wrap{ position:relative; flex-shrink:0; }
   .phone{ width:375px; height:812px; background:#0B0B0C; border-radius:52px; padding:14px; box-shadow: 0 30px 60px -20px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.05); }
   .screen{ width:100%; height:100%; background:var(--cream); border-radius:38px; overflow:hidden; position:relative; display:flex; flex-direction:column; }
   .notch{ position:absolute; top:14px; left:50%; transform:translateX(-50%); width:120px; height:26px; background:#0B0B0C; border-radius:20px; z-index:20; }
@@ -190,6 +191,11 @@ const state = {
   contributions: [
     { amount: 2820.50, daysAgo: 95 }, // unlocked (past 90 days)
     { amount: 1000.00, daysAgo: 42 }, // still locked, 48 days left
+  ],
+  buyAmount: 500, // amount currently entered on the Add Funds screen
+  activity: [
+    { name:'Andrea', type:'contribution', amount:500, time:'2h ago' },
+    { name:'Jules', type:'streak', time:'1d ago' },
   ]
 };
 
@@ -340,8 +346,9 @@ const screens = [
         <div class="card portfolio-card"><div><div class="eyebrow">Your Portfolio</div><div class="val">₱3,820.50</div><div class="gain">▲ 4.2% this month</div></div><div class="pill">${tf.label}</div></div>
         ${pct>=50?`<div class="note" style="background:var(--green-bg); border-color:#B9DCC4; color:var(--green);">🎉 Milestone unlocked! Your barkada hit ${pct}% of your goal — cashback reward applied.</div>`:''}
         <div class="card"><div class="eyebrow">Barkada Activity</div>
-          <div class="activity-row"><div class="activity-av">${initials(state.members[1]?.name || 'A')}</div><div class="activity-text"><b>${escapeHtml(state.members[1]?.name || 'Andrea')}</b> ${state.shareAmounts ? 'contributed ₱500' : 'contributed to the goal'}</div><div class="activity-time">2h ago</div></div>
-          <div class="activity-row"><div class="activity-av">${initials(state.members[2]?.name || 'J')}</div><div class="activity-text"><b>${escapeHtml(state.members[2]?.name || 'Jules')}</b> hit a 3-month streak 🔥</div><div class="activity-time">1d ago</div></div>
+          ${state.activity.map(a=>`
+            <div class="activity-row"><div class="activity-av">${initials(a.name)}</div><div class="activity-text"><b>${escapeHtml(a.name)}</b> ${a.type==='contribution' ? (state.shareAmounts ? `contributed ${money(a.amount)}` : 'contributed to the goal') : 'hit a 3-month streak 🔥'}</div><div class="activity-time">${a.time}</div></div>
+          `).join('')}
         </div>
       </div>
       ${tabbarHtml('dashboard')}
@@ -351,13 +358,18 @@ const screens = [
     render: () => `
       <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Add Funds</div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
-        <div class="amount-display"><div class="cur">PHP</div><div class="num">500</div><p class="muted">Contributing to <b>${escapeHtml(state.goalName || 'your goal')}</b></p></div>
+        <div class="amount-display"><div class="cur">PHP</div><div class="num" id="buyAmountNum">${state.buyAmount.toLocaleString('en-PH')}</div><p class="muted">Contributing to <b>${escapeHtml(state.goalName || 'your goal')}</b></p></div>
         <div class="toggle-row"><div class="t">One-time</div><div class="t on">Monthly auto-debit</div></div>
-        <div class="keypad"><div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key">4</div><div class="key">5</div><div class="key">6</div><div class="key">7</div><div class="key">8</div><div class="key">9</div><div class="key">₱</div><div class="key">0</div><div class="key">⌫</div></div>
+        <div class="keypad">
+          <div class="key" data-key="1">1</div><div class="key" data-key="2">2</div><div class="key" data-key="3">3</div>
+          <div class="key" data-key="4">4</div><div class="key" data-key="5">5</div><div class="key" data-key="6">6</div>
+          <div class="key" data-key="7">7</div><div class="key" data-key="8">8</div><div class="key" data-key="9">9</div>
+          <div class="key" style="opacity:.4; cursor:default;">₱</div><div class="key" data-key="0">0</div><div class="key" data-key="back">⌫</div>
+        </div>
         <p class="muted" style="text-align:center;">Debited from BPI Savings •••• 4821</p>
-        <p class="muted" style="text-align:center; margin-top:6px;">🔒 This ₱500 contribution unlocks 90 days from today — earlier contributions may already be free to withdraw.</p>
+        <p class="muted" style="text-align:center; margin-top:6px;">🔒 This ${money(state.buyAmount)} contribution unlocks 90 days from today — earlier contributions may already be free to withdraw.</p>
       </div>
-      <div style="padding:14px 20px 14px;"><button class="btn" data-goto="monitor">Confirm ₱500 / month</button></div>
+      <div style="padding:14px 20px 14px;"><button class="btn" id="confirmBuyBtn" ${state.buyAmount<=0?'disabled style="opacity:.5; cursor:not-allowed;"':''}>Confirm ${money(state.buyAmount)} / month</button></div>
       ${tabbarHtml('monitor')}
     `},
 
@@ -496,6 +508,29 @@ function wireScreenInteractions(){
       document.getElementById('shareAmountsSwitch').classList.toggle('on', state.shareAmounts);
     };
   }
+
+  if (id === 'buy'){
+    document.querySelectorAll('.key[data-key]').forEach(key=>{
+      key.onclick = ()=>{
+        const k = key.dataset.key;
+        if (k === 'back'){
+          state.buyAmount = Math.floor(state.buyAmount / 10);
+        } else {
+          const next = state.buyAmount * 10 + Number(k);
+          if (next <= 999999) state.buyAmount = next;
+        }
+        renderScreen();
+      };
+    });
+    document.getElementById('confirmBuyBtn').onclick = ()=>{
+      if (state.buyAmount <= 0) return;
+      state.currentAmount += state.buyAmount;
+      state.contributions.push({ amount: state.buyAmount, daysAgo: 0 });
+      state.activity.unshift({ name:'You', type:'contribution', amount: state.buyAmount, time:'Just now' });
+      state.buyAmount = 500;
+      goToScreen('dashboard');
+    };
+  }
 }
 
 function addMember(){
@@ -517,6 +552,15 @@ function updatePreview(){
 
 document.getElementById('sidebarBackdrop').onclick = closeSidebar;
 document.getElementById('closeSidebarBtn').onclick = closeSidebar;
+
+function fitPhoneToViewport(){
+  const wrap = document.querySelector('.phone-wrap');
+  const PHONE_W = 375, PHONE_H = 812, MARGIN = 24;
+  const scale = Math.min(1, (window.innerWidth - MARGIN*2) / PHONE_W, (window.innerHeight - MARGIN*2) / PHONE_H);
+  wrap.style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', fitPhoneToViewport);
+fitPhoneToViewport();
 
 renderScreen();
 </script>
