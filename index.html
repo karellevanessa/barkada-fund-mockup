@@ -213,6 +213,16 @@ function contributionsSummary(){
   return { available, lockedTotal, soonest, soonestDaysLeft: soonest ? 90 - soonest.daysAgo : null };
 }
 
+function tabbarHtml(active){
+  const tabs = [
+    { id:'dashboard', icon:'🏠', label:'Home' },
+    { id:'members',   icon:'🎯', label:'Barkada' },
+    { id:'monitor',   icon:'💰', label:'Invest' },
+    { id:'profile',   icon:'👤', label:'Profile' },
+  ];
+  return `<div class="tabbar">${tabs.map(t=>`<div class="tab ${t.id===active?'active':''}" ${t.id!=='profile'?`data-goto="${t.id}"`:''}>${t.icon}<br>${t.label}</div>`).join('')}</div>`;
+}
+
 /* ---------- screens ---------- */
 const screens = [
   { id:'onboard', label:'Onboarding Quiz',
@@ -227,7 +237,8 @@ const screens = [
         <div class="opt"><span>Long-term growth, 5+ years</span><div class="radio"></div></div>
         <div class="opt"><span>Not sure yet</span><div class="radio"></div></div>
       </div>
-      <div style="padding:14px 20px 22px;"><button class="btn" data-goto="goal">Continue</button></div>
+      <div style="padding:14px 20px 14px;"><button class="btn" data-goto="goal">Continue</button></div>
+      ${tabbarHtml(null)}
     `},
 
   { id:'goal', label:'Set Investment Goal',
@@ -260,7 +271,8 @@ const screens = [
         </div>
         <p class="muted" style="text-align:center;">NAVPS ₱100 at launch · ₱500 minimum per member</p>
       </div>
-      <div style="padding:14px 20px 22px;"><button class="btn" data-goto="members">Save Goal</button></div>
+      <div style="padding:14px 20px 14px;"><button class="btn" data-goto="members">Save Goal</button></div>
+      ${tabbarHtml('members')}
     `},
 
   { id:'members', label:'Add Members',
@@ -303,7 +315,8 @@ const screens = [
 
         <div class="why-box"><b>Ending the shared goal is different from leaving it.</b> Any member can redeem their own holdings and exit anytime, no one else is affected. But dissolving the barkada's shared goal itself needs a unanimous vote from everyone still in it.</div>
       </div>
-      <div style="padding:14px 20px 22px;"><button class="btn" data-goto="dashboard">Continue to Dashboard</button></div>
+      <div style="padding:14px 20px 14px;"><button class="btn" data-goto="dashboard">Continue to Dashboard</button></div>
+      ${tabbarHtml('members')}
     `},
 
   { id:'dashboard', label:'Home Dashboard',
@@ -331,12 +344,7 @@ const screens = [
           <div class="activity-row"><div class="activity-av">${initials(state.members[2]?.name || 'J')}</div><div class="activity-text"><b>${escapeHtml(state.members[2]?.name || 'Jules')}</b> hit a 3-month streak 🔥</div><div class="activity-time">1d ago</div></div>
         </div>
       </div>
-      <div class="tabbar">
-        <div class="tab active" data-goto="dashboard">🏠 <br>Home</div>
-        <div class="tab" data-goto="members">🎯<br>Barkada</div>
-        <div class="tab" data-goto="monitor">💰<br>Invest</div>
-        <div class="tab">👤<br>Profile</div>
-      </div>
+      ${tabbarHtml('dashboard')}
     `;}},
 
   { id:'buy', label:'Add Funds',
@@ -349,7 +357,8 @@ const screens = [
         <p class="muted" style="text-align:center;">Debited from BPI Savings •••• 4821</p>
         <p class="muted" style="text-align:center; margin-top:6px;">🔒 This ₱500 contribution unlocks 90 days from today — earlier contributions may already be free to withdraw.</p>
       </div>
-      <div style="padding:14px 20px 22px;"><button class="btn" data-goto="monitor">Confirm ₱500 / month</button></div>
+      <div style="padding:14px 20px 14px;"><button class="btn" data-goto="monitor">Confirm ₱500 / month</button></div>
+      ${tabbarHtml('monitor')}
     `},
 
   { id:'monitor', label:'Monitor Holdings',
@@ -371,12 +380,7 @@ const screens = [
           <button class="btn secondary" style="flex:1;" data-goto="redeem">Redeem</button>
         </div>
       </div>
-      <div class="tabbar">
-        <div class="tab" data-goto="dashboard">🏠 <br>Home</div>
-        <div class="tab" data-goto="members">🎯<br>Barkada</div>
-        <div class="tab active" data-goto="monitor">💰<br>Invest</div>
-        <div class="tab">👤<br>Profile</div>
-      </div>
+      ${tabbarHtml('monitor')}
     `},
 
   { id:'redeem', label:'Redeem',
@@ -393,7 +397,8 @@ const screens = [
         <p class="muted" style="text-align:center;">Proceeds sent to BPI Savings •••• 4821 · standard settlement timeline applies</p>
         <p class="muted" style="text-align:center; margin-top:8px;">1.00% annual management fee applies. No early redemption fee — each contribution simply unlocks 90 days after its own date.</p>
       </div>
-      <div style="padding:14px 20px 22px;"><button class="btn" data-goto="monitor">Redeem ${moneyExact(available)}</button><button class="btn ghost" style="margin-top:10px;">Vote to End Barkada Goal</button></div>
+      <div style="padding:14px 20px 14px;"><button class="btn" data-goto="monitor">Redeem ${moneyExact(available)}</button><button class="btn ghost" style="margin-top:10px;">Vote to End Barkada Goal</button></div>
+      ${tabbarHtml('monitor')}
     `;}},
 ];
 
