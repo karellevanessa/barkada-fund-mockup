@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>BPI Barkada FUNd — Interactive Mockup</title>
+<title>BPI Barkada FUNd</title>
 <style>
   :root{
     --red:#A6192E; --red-dark:#7C1121; --cream:#FBF7F1; --paper:#FFFFFF;
@@ -10,28 +10,7 @@
     --green:#2F7A4D; --green-bg:#E9F3EC;
   }
   *{box-sizing:border-box; -webkit-font-smoothing:antialiased;}
-  body{ margin:0; background:#EDE7DE; font-family:'Manrope','Segoe UI',system-ui,sans-serif; color:var(--ink); display:flex; flex-direction:column; align-items:center; padding:28px 16px 64px; }
-  h1.page-title{font-size:15px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; margin:0 0 4px;}
-  p.page-sub{margin:0 0 18px; color:var(--ink-soft); font-size:13px; text-align:center; max-width:420px;}
-
-  .collab-bar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; background:var(--paper); border:1px solid var(--hair); border-radius:14px; padding:10px 14px; margin-bottom:16px; max-width:420px; width:100%; }
-  .name-input{ border:1.5px solid var(--hair); border-radius:10px; padding:7px 10px; font-family:inherit; font-size:12.5px; font-weight:700; width:120px; outline:none; }
-  .name-input:focus{ border-color:var(--red); }
-  .presence{ display:flex; align-items:center; }
-  .presence .pav{ width:24px; height:24px; border-radius:50%; margin-left:-7px; border:2px solid var(--paper); display:flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:800; color:#fff; }
-  .presence .pav:first-child{ margin-left:0; }
-  .presence-label{ font-size:10.5px; color:var(--ink-soft); font-weight:700; margin-left:4px;}
-  .save-status{ font-size:10px; color:var(--ink-soft); font-weight:700; margin-left:auto; }
-
-  .switcher{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:20px; max-width:460px; }
-  .switcher button{ border:1px solid var(--hair); background:var(--paper); color:var(--ink-soft); font-family:inherit; font-size:11px; font-weight:700; padding:7px 11px; border-radius:999px; cursor:pointer; transition:.15s; letter-spacing:.02em; position:relative; }
-  .switcher button.active{ background:var(--red); color:#fff; border-color:var(--red);}
-  .switcher button:hover:not(.active){ border-color:var(--red); color:var(--red); }
-  .switcher .step-num{ opacity:.6; margin-right:5px; font-weight:800;}
-  .switcher .badge{ display:inline-block; min-width:15px; height:15px; padding:0 4px; border-radius:999px; background:var(--gold); color:#4A3200; font-size:9px; font-weight:800; margin-left:5px; line-height:15px; text-align:center; }
-
-  .comment-toggle{ display:flex; align-items:center; gap:6px; background:var(--paper); border:1.5px solid var(--hair); border-radius:999px; padding:8px 16px; font-size:12.5px; font-weight:800; cursor:pointer; margin-bottom:14px; color:var(--ink-soft); transition:.15s; }
-  .comment-toggle.active{ border-color:var(--red); color:var(--red); background:#FDF1F1; }
+  body{ margin:0; background:#EDE7DE; font-family:'Manrope','Segoe UI',system-ui,sans-serif; color:var(--ink); display:flex; align-items:center; justify-content:center; min-height:100vh; padding:28px 16px; }
 
   .phone-wrap{ position:relative; }
   .phone{ width:375px; height:812px; background:#0B0B0C; border-radius:52px; padding:14px; box-shadow: 0 30px 60px -20px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.05); }
@@ -99,7 +78,7 @@
   .activity-time{ font-size:10.5px; color:var(--ink-soft); font-weight:700;}
 
   .tabbar{ display:flex; justify-content:space-around; align-items:center; padding:12px 10px 10px; border-top:1px solid var(--hair); background:var(--paper); flex-shrink:0; }
-  .tab{ display:flex; flex-direction:column; align-items:center; gap:4px; font-size:9.5px; font-weight:800; color:var(--ink-soft);}
+  .tab{ display:flex; flex-direction:column; align-items:center; gap:4px; font-size:9.5px; font-weight:800; color:var(--ink-soft); cursor:pointer;}
   .tab.active{ color:var(--red); }
 
   .amount-display{ text-align:center; padding:28px 0 18px; }
@@ -124,7 +103,7 @@
   .holding-gain{ color:var(--green); font-size:10.5px; font-weight:700;}
 
   .note{ background:#FDF6E8; border:1px solid #F0DFB0; border-radius:12px; padding:12px 14px; font-size:11.5px; color:#8A6A1E; font-weight:700; line-height:1.5; margin-bottom:14px; }
-  .icon-btn{ width:32px; height:32px; border-radius:10px; background:var(--paper); border:1px solid var(--hair); display:flex; align-items:center; justify-content:center; font-size:14px; }
+  .icon-btn{ width:32px; height:32px; border-radius:10px; background:var(--paper); border:1px solid var(--hair); display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; }
 
   /* interactive form bits */
   .field-label{ font-size:11px; font-weight:800; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; margin:14px 0 6px; }
@@ -136,7 +115,7 @@
   .amount-field-wrap input{ border:none; outline:none; font-family:inherit; font-weight:800; font-size:14px; padding:12px 8px; width:100%; background:transparent; }
   .amount-field-wrap:focus-within{ border-color:var(--red); }
   .timeframe-row{ display:flex; gap:8px; }
-  .tf-card{ flex:1; border:1.5px solid var(--hair); border-radius:14px; padding:12px 8px; text-align:center; cursor:pointer; background:var(--paper); }
+  .tf-card{ flex:1; border:1.5px solid var(--hair); border-radius:14px; padding:12px 8px; text-align:center; background:var(--paper); }
   .tf-card.sel{ border-color:var(--red); background:#FDF1F1; }
   .tf-name{ font-size:12.5px; font-weight:800; }
   .tf-sub{ font-size:9.5px; color:var(--ink-soft); font-weight:700; margin-top:2px; }
@@ -159,53 +138,9 @@
   .remove-btn{ width:24px; height:24px; border-radius:50%; border:1px solid var(--hair); background:var(--paper); font-size:12px; color:var(--ink-soft); cursor:pointer; display:flex; align-items:center; justify-content:center; }
   .why-box{ background:#F4EFE6; border-radius:12px; padding:12px 14px; font-size:11.5px; color:var(--ink-soft); line-height:1.55; margin-bottom:16px; }
   .why-box b{ color:var(--ink); }
-
-  .pin-layer{ position:absolute; inset:14px; border-radius:38px; z-index:15; }
-  .pin-layer.mode-on{ cursor:crosshair; }
-  .pin{ position:absolute; width:26px; height:26px; border-radius:50% 50% 50% 4px; background:var(--red); color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; transform:translate(-50%,-100%) rotate(-45deg); box-shadow:0 3px 8px rgba(0,0,0,.3); cursor:pointer; z-index:16; }
-  .pin span{ transform:rotate(45deg); }
-  .pin.resolved{ background:var(--ink-soft); opacity:.55; }
-  .compose-card{ position:absolute; z-index:30; width:210px; background:var(--paper); border:1px solid var(--hair); border-radius:14px; padding:12px; box-shadow:0 12px 30px rgba(0,0,0,.25); }
-  .compose-card textarea{ width:100%; height:60px; border:1px solid var(--hair); border-radius:10px; padding:8px; font-family:inherit; font-size:12px; resize:none; margin-bottom:8px; outline:none; }
-  .compose-card textarea:focus{ border-color:var(--red); }
-  .compose-row{ display:flex; gap:6px; }
-  .compose-row button{ flex:1; border:none; border-radius:10px; padding:8px; font-size:11.5px; font-weight:800; cursor:pointer; font-family:inherit; }
-  .compose-row .send{ background:var(--red); color:#fff; }
-  .compose-row .cancel{ background:var(--hair); color:var(--ink-soft); }
-
-  .comments-panel{ width:100%; max-width:420px; margin-top:16px; background:var(--paper); border:1px solid var(--hair); border-radius:16px; padding:14px 16px; }
-  .comments-panel .cp-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-  .comments-panel .cp-title{ font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); }
-  .comment-item{ display:flex; gap:10px; padding:10px 0; border-top:1px solid var(--hair); }
-  .comment-item:first-of-type{ border-top:none; }
-  .c-av{ width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800; color:#fff; }
-  .c-body{ flex:1; }
-  .c-name-row{ display:flex; justify-content:space-between; align-items:baseline; }
-  .c-name{ font-size:12px; font-weight:800; }
-  .c-time{ font-size:10px; color:var(--ink-soft); font-weight:700; }
-  .c-text{ font-size:12.5px; margin:2px 0 6px; line-height:1.4; }
-  .c-text.resolved-text{ text-decoration:line-through; color:var(--ink-soft); }
-  .c-resolve{ font-size:10.5px; font-weight:800; color:var(--red); cursor:pointer; background:none; border:none; padding:0; font-family:inherit; }
-  .c-resolve.done{ color:var(--ink-soft); }
-  .empty-state{ font-size:12px; color:var(--ink-soft); text-align:center; padding:14px 0; }
-  .caption-box{ max-width:375px; margin-top:14px; background:var(--paper); border:1px solid var(--hair); border-radius:14px; padding:14px 16px; font-size:12px; color:var(--ink-soft); line-height:1.55; }
-  .caption-box b{ color:var(--ink); }
 </style>
 </head>
 <body>
-
-<h1 class="page-title">BPI Barkada FUNd — Interactive Mockup</h1>
-<p class="page-sub">Try it live: set an investment goal, add members, then see it reflected on the Home dashboard. Comments still sync for your team (~4s delay).</p>
-
-<div class="collab-bar">
-  <input class="name-input" id="nameInput" placeholder="Your name" maxlength="16">
-  <div class="presence" id="presenceRow"></div>
-  <span class="presence-label" id="presenceLabel"></span>
-  <span class="save-status" id="saveStatus"></span>
-</div>
-
-<div class="switcher" id="switcher"></div>
-<button class="comment-toggle" id="toggleComment">💬 Add Comment</button>
 
 <div class="phone-wrap">
   <div class="phone">
@@ -215,13 +150,6 @@
       <div id="screen-root"></div>
     </div>
   </div>
-  <div class="pin-layer" id="pinLayer"></div>
-</div>
-
-<div class="caption-box" id="caption"></div>
-<div class="comments-panel">
-  <div class="cp-head"><span class="cp-title">Comments on this screen</span><span class="cp-title" id="commentCount">0</span></div>
-  <div id="commentsList"></div>
 </div>
 
 <script>
@@ -249,13 +177,9 @@ const TIMEFRAMES = {
   long:   { label:'Long-Term',   sub:'5–10+ yrs', equities:100, fixed:0, money:0 },
 };
 
-/* ---------- collab session ---------- */
-const SESSION_ID = 'sess_' + Math.random().toString(36).slice(2, 10);
-let myName = '';
 const COLORS = ['#A6192E','#D9A441','#2F7A4D','#3B6EA5','#8A4EA6','#C46B2C'];
 function colorFor(name){ let h=0; for(const c of (name||'?')) h=(h*31+c.charCodeAt(0))%COLORS.length; return COLORS[Math.abs(h)%COLORS.length]; }
 function initials(name){ return (name||'?').trim().slice(0,1).toUpperCase() || '?'; }
-function timeAgo(ts){ const s=Math.floor((Date.now()-ts)/1000); if(s<60) return 'just now'; if(s<3600) return Math.floor(s/60)+'m ago'; if(s<86400) return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function money(n){ return '₱' + Number(n).toLocaleString('en-PH'); }
 function moneyExact(n){ const hasCents = Math.round(Number(n)*100) % 100 !== 0; return '₱' + Number(n).toLocaleString('en-PH', hasCents ? {minimumFractionDigits:2, maximumFractionDigits:2} : {maximumFractionDigits:0}); }
@@ -270,7 +194,6 @@ function contributionsSummary(){
 /* ---------- screens ---------- */
 const screens = [
   { id:'onboard', label:'Onboarding Quiz',
-    caption:'<b>Account onboarding.</b> Existing BPI users skip KYC. A short quiz points each person toward a starting pathway — they can adjust it later when setting their actual goal.',
     render: () => `
       <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn">✕</div></div>
       <div class="content">
@@ -282,11 +205,10 @@ const screens = [
         <div class="opt"><span>Long-term growth, 5+ years</span><div class="radio"></div></div>
         <div class="opt"><span>Not sure yet</span><div class="radio"></div></div>
       </div>
-      <div style="padding:14px 20px 22px;"><button class="btn">Continue</button></div>
+      <div style="padding:14px 20px 22px;"><button class="btn" data-goto="goal">Continue</button></div>
     `},
 
   { id:'goal', label:'Set Investment Goal',
-    caption:'<b>Why a goal at all?</b> A shared, named goal is what makes the barkada mechanic work — friends stay motivated by a concrete target ("Boracay Trip"), not an abstract instruction to "invest for retirement." Try changing the fields — the goal flows straight into the Home dashboard. Note: since this fund is 100% equities, the timeframe you pick sets your horizon and expectations, not a different asset mix — there\'s no bond/money-market blend to shift.',
     render: () => `
       <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div></div>
       <div class="content">
@@ -316,11 +238,10 @@ const screens = [
         </div>
         <p class="muted" style="text-align:center;">NAVPS ₱100 at launch · ₱500 minimum per member</p>
       </div>
-      <div style="padding:14px 20px 22px;"><button class="btn" id="saveGoalBtn">Save Goal</button></div>
+      <div style="padding:14px 20px 22px;"><button class="btn" data-goto="members">Save Goal</button></div>
     `},
 
   { id:'members', label:'Add Members',
-    caption:'<b>How members get added.</b> The goal creator gets a shareable invite code. Anyone who enters it joins the same shared goal while keeping their own individual holdings — try adding a name below and watch the Home dashboard update.',
     render: () => `
       <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div></div>
       <div class="content">
@@ -360,10 +281,10 @@ const screens = [
 
         <div class="why-box"><b>Ending the shared goal is different from leaving it.</b> Any member can redeem their own holdings and exit anytime, no one else is affected. But dissolving the barkada's shared goal itself needs a unanimous vote from everyone still in it.</div>
       </div>
+      <div style="padding:14px 20px 22px;"><button class="btn" data-goto="dashboard">Continue to Dashboard</button></div>
     `},
 
   { id:'dashboard', label:'Home Dashboard',
-    caption:'<b>Daily routine.</b> Everything here is pulled live from your goal and member list — go back and change the goal name, amount, or members, then return here to see it update.',
     render: () => {
       const tf = TIMEFRAMES[state.timeframe];
       const pct = Math.min(100, Math.round((state.currentAmount/Math.max(1,state.targetAmount))*100));
@@ -388,13 +309,17 @@ const screens = [
           <div class="activity-row"><div class="activity-av">${initials(state.members[2]?.name || 'J')}</div><div class="activity-text"><b>${escapeHtml(state.members[2]?.name || 'Jules')}</b> hit a 3-month streak 🔥</div><div class="activity-time">1d ago</div></div>
         </div>
       </div>
-      <div class="tabbar"><div class="tab active">🏠 <br>Home</div><div class="tab">🎯<br>Barkada</div><div class="tab">💰<br>Invest</div><div class="tab">👤<br>Profile</div></div>
+      <div class="tabbar">
+        <div class="tab active" data-goto="dashboard">🏠 <br>Home</div>
+        <div class="tab" data-goto="members">🎯<br>Barkada</div>
+        <div class="tab" data-goto="monitor">💰<br>Invest</div>
+        <div class="tab">👤<br>Profile</div>
+      </div>
     `;}},
 
   { id:'buy', label:'Add Funds',
-    caption:'<b>Buying.</b> A single amount entry, recurring auto-debit toggle, one tap to confirm — debited directly from the linked BPI account.',
     render: () => `
-      <div class="appbar"><div class="icon-btn">←</div><div class="brand-name">Add Funds</div><div style="width:32px;"></div></div>
+      <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Add Funds</div><div style="width:32px;"></div></div>
       <div class="content">
         <div class="amount-display"><div class="cur">PHP</div><div class="num">500</div><p class="muted">Contributing to <b>${escapeHtml(state.goalName || 'your goal')}</b></p></div>
         <div class="toggle-row"><div class="t">One-time</div><div class="t on">Monthly auto-debit</div></div>
@@ -402,13 +327,12 @@ const screens = [
         <p class="muted" style="text-align:center;">Debited from BPI Savings •••• 4821</p>
         <p class="muted" style="text-align:center; margin-top:6px;">🔒 This ₱500 contribution unlocks 90 days from today — earlier contributions may already be free to withdraw.</p>
       </div>
-      <div style="padding:14px 20px 22px;"><button class="btn">Confirm ₱500 / month</button></div>
+      <div style="padding:14px 20px 22px;"><button class="btn" data-goto="monitor">Confirm ₱500 / month</button></div>
     `},
 
   { id:'monitor', label:'Monitor Holdings',
-    caption:'<b>Viewing holdings.</b> Simple view by default. The Advanced toggle reveals NAVPS and individual holdings.',
     render: () => `
-      <div class="appbar"><div class="icon-btn">←</div><div class="brand-name">Your Portfolio</div><div class="icon-btn">⋯</div></div>
+      <div class="appbar"><div class="icon-btn" data-goto="dashboard">←</div><div class="brand-name">Your Portfolio</div><div class="icon-btn">⋯</div></div>
       <div class="content">
         <div class="card"><div class="eyebrow">Total Value</div><div class="h2" style="font-size:26px;">₱3,820.50</div><div class="gain" style="color:var(--green); font-size:12px; font-weight:800;">▲ ₱154.20 (4.2%) · 1 Year View</div></div>
         <div class="switch-row"><span style="font-size:12.5px; font-weight:800;">Advanced view</span><div class="switch on"></div></div>
@@ -420,16 +344,24 @@ const screens = [
           <div class="holding-row"><div><div class="holding-name">Nike</div><div class="holding-sub">Global · Apparel/Lifestyle</div></div><div><div class="holding-val">₱366.20</div><div class="holding-gain">▲ 2.0%</div></div></div>
           <div class="holding-row"><div><div class="holding-name">Visa</div><div class="holding-sub">Global · Payments/Fintech</div></div><div><div class="holding-val">₱310.90</div><div class="holding-gain">▲ 1.3%</div></div></div>
         </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn" style="flex:1;" data-goto="buy">Add Funds</button>
+          <button class="btn secondary" style="flex:1;" data-goto="redeem">Redeem</button>
+        </div>
       </div>
-      <div class="tabbar"><div class="tab">🏠 <br>Home</div><div class="tab">🎯<br>Barkada</div><div class="tab active">💰<br>Invest</div><div class="tab">👤<br>Profile</div></div>
+      <div class="tabbar">
+        <div class="tab" data-goto="dashboard">🏠 <br>Home</div>
+        <div class="tab" data-goto="members">🎯<br>Barkada</div>
+        <div class="tab active" data-goto="monitor">💰<br>Invest</div>
+        <div class="tab">👤<br>Profile</div>
+      </div>
     `},
 
   { id:'redeem', label:'Redeem',
-    caption:'<b>Redeeming.</b> A member redeems only their own holdings, never the group total. Each contribution unlocks 90 days after its own investment date, so part of a portfolio can be withdrawable while a more recent top-up is still locked. If a member exits fully, the barkada goal quietly recalculates.',
     render: () => {
       const { available, lockedTotal, soonest, soonestDaysLeft } = contributionsSummary();
       return `
-      <div class="appbar"><div class="icon-btn">←</div><div class="brand-name">Redeem Funds</div><div style="width:32px;"></div></div>
+      <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Redeem Funds</div><div style="width:32px;"></div></div>
       <div class="content">
         <div class="note" style="background:#FBEAEA; border-color:#EFC2C2; color:var(--red-dark);">🔒 Each contribution unlocks 90 days after its own investment date — your portfolio doesn't lock or unlock all at once.</div>
         <div class="card"><div class="eyebrow">Available to withdraw</div><div class="h2" style="font-size:24px; color:var(--green);">${moneyExact(available)}</div><p class="muted" style="margin-top:6px;">From contributions already past their 90-day lock.</p></div>
@@ -439,7 +371,7 @@ const screens = [
         <p class="muted" style="text-align:center;">Proceeds sent to BPI Savings •••• 4821 · standard settlement timeline applies</p>
         <p class="muted" style="text-align:center; margin-top:8px;">1.00% annual management fee applies. No early redemption fee — each contribution simply unlocks 90 days after its own date.</p>
       </div>
-      <div style="padding:14px 20px 22px;"><button class="btn" id="confirmRedeemBtn">Redeem ${moneyExact(available)}</button><button class="btn ghost" style="margin-top:10px;">Vote to End Barkada Goal</button></div>
+      <div style="padding:14px 20px 22px;"><button class="btn" data-goto="monitor">Redeem ${moneyExact(available)}</button><button class="btn ghost" style="margin-top:10px;">Vote to End Barkada Goal</button></div>
     `;}},
 ];
 
@@ -448,43 +380,28 @@ function inviteCode(){
   return `${slug}-${state.timeframe.slice(0,2).toUpperCase()}26-JMA`;
 }
 
-let currentIdx = 3; // start on dashboard so the interactivity's effect is visible fast
-let commentMode = false;
-let composeAt = null;
-let commentsCache = {};
+let currentIdx = 0; // start at onboarding — the real first-time customer flow
 
 const root = document.getElementById('screen-root');
-const switcher = document.getElementById('switcher');
-const caption = document.getElementById('caption');
-const pinLayer = document.getElementById('pinLayer');
-const commentsList = document.getElementById('commentsList');
-const commentCount = document.getElementById('commentCount');
-const saveStatus = document.getElementById('saveStatus');
-const nameInput = document.getElementById('nameInput');
-const toggleBtn = document.getElementById('toggleComment');
 
 function currentScreen(){ return screens[currentIdx]; }
 
-function renderSwitcher(){
-  switcher.innerHTML = '';
-  screens.forEach((s,i)=>{
-    const b = document.createElement('button');
-    const count = (commentsCache[s.id]||[]).filter(c=>!c.resolved).length;
-    b.className = i===currentIdx ? 'active' : '';
-    b.innerHTML = `<span class="step-num">${i+1}</span>${s.label}${count?`<span class="badge">${count}</span>`:''}`;
-    b.onclick = ()=>{ currentIdx = i; composeAt = null; renderAll(); };
-    switcher.appendChild(b);
-  });
+function goToScreen(id){
+  currentIdx = screens.findIndex(s=>s.id===id);
+  renderScreen();
 }
 
 function renderScreen(){
   root.innerHTML = currentScreen().render();
-  caption.innerHTML = currentScreen().caption;
   wireScreenInteractions();
 }
 
 function wireScreenInteractions(){
   const id = currentScreen().id;
+
+  document.querySelectorAll('[data-goto]').forEach(el=>{
+    el.onclick = ()=> goToScreen(el.dataset.goto);
+  });
 
   if (id === 'goal'){
     document.getElementById('goalNameInput').addEventListener('input', (e)=>{
@@ -495,10 +412,6 @@ function wireScreenInteractions(){
       state.targetAmount = Number(e.target.value) || 0;
       updatePreview();
     });
-    document.getElementById('saveGoalBtn').onclick = ()=>{
-      currentIdx = screens.findIndex(s=>s.id==='dashboard');
-      renderAll();
-    };
   }
 
   if (id === 'members'){
@@ -522,7 +435,6 @@ function wireScreenInteractions(){
     document.getElementById('shareAmountsRow').onclick = ()=>{
       state.shareAmounts = !state.shareAmounts;
       document.getElementById('shareAmountsSwitch').classList.toggle('on', state.shareAmounts);
-      if (currentScreen().id === 'dashboard') renderScreen();
     };
   }
 }
@@ -544,130 +456,7 @@ function updatePreview(){
   box.querySelector('.gp-amt').textContent = `${money(state.targetAmount)} target · ${tf.label} pathway (${tf.equities}% equities)`;
 }
 
-function renderPins(){
-  pinLayer.innerHTML = '';
-  pinLayer.className = 'pin-layer' + (commentMode ? ' mode-on' : '');
-  const list = commentsCache[currentScreen().id] || [];
-  list.forEach((c, i)=>{
-    const pin = document.createElement('div');
-    pin.className = 'pin' + (c.resolved ? ' resolved' : '');
-    pin.style.left = c.x + '%'; pin.style.top = c.y + '%';
-    pin.innerHTML = `<span>${i+1}</span>`;
-    pin.title = c.name + ': ' + c.text;
-    pin.onclick = (e)=>{ e.stopPropagation(); document.getElementById('c-'+c.id)?.scrollIntoView({behavior:'smooth', block:'center'}); };
-    pinLayer.appendChild(pin);
-  });
-  if (composeAt){
-    const box = document.createElement('div');
-    box.className = 'compose-card';
-    box.style.left = `calc(${composeAt.x}% - 20px)`;
-    box.style.top = `calc(${composeAt.y}% + 10px)`;
-    box.innerHTML = `<textarea id="composeText" placeholder="Leave a comment..." autofocus></textarea><div class="compose-row"><button class="cancel" id="composeCancel">Cancel</button><button class="send" id="composeSend">Post</button></div>`;
-    pinLayer.appendChild(box);
-    document.getElementById('composeCancel').onclick = ()=>{ composeAt = null; renderPins(); };
-    document.getElementById('composeSend').onclick = submitComment;
-    setTimeout(()=>document.getElementById('composeText')?.focus(), 30);
-  }
-}
-
-function renderComments(){
-  const list = commentsCache[currentScreen().id] || [];
-  commentCount.textContent = list.length;
-  if (!list.length){ commentsList.innerHTML = '<div class="empty-state">No comments yet on this screen. Toggle "Add Comment" and tap the phone to leave one.</div>'; return; }
-  commentsList.innerHTML = list.slice().sort((a,b)=>b.ts-a.ts).map(c=>`
-    <div class="comment-item" id="c-${c.id}">
-      <div class="c-av" style="background:${colorFor(c.name)}">${initials(c.name)}</div>
-      <div class="c-body">
-        <div class="c-name-row"><span class="c-name">${escapeHtml(c.name)}</span><span class="c-time">${timeAgo(c.ts)}</span></div>
-        <div class="c-text ${c.resolved?'resolved-text':''}">${escapeHtml(c.text)}</div>
-        <button class="c-resolve ${c.resolved?'done':''}" data-id="${c.id}">${c.resolved ? '✓ Resolved · undo' : 'Mark resolved'}</button>
-      </div>
-    </div>`).join('');
-  commentsList.querySelectorAll('.c-resolve').forEach(btn=>{ btn.onclick = ()=>toggleResolve(btn.dataset.id); });
-}
-
-function renderPresence(all){
-  const row = document.getElementById('presenceRow');
-  const label = document.getElementById('presenceLabel');
-  const cutoff = Date.now() - 15000;
-  const active = Object.entries(all||{}).filter(([id,p])=>p.ts > cutoff);
-  row.innerHTML = active.map(([id,p])=>`<div class="pav" style="background:${colorFor(p.name)}" title="${escapeHtml(p.name)}">${initials(p.name)}</div>`).join('');
-  label.textContent = active.length ? `${active.length} viewing now` : '';
-}
-
-function renderAll(){ renderSwitcher(); renderScreen(); renderPins(); renderComments(); }
-
-/* ---------- storage (comments + presence) ---------- */
-async function loadComments(screenId){
-  try{ const res = await window.storage.get('barkada-mock:comments:' + screenId, true); commentsCache[screenId] = res ? JSON.parse(res.value) : []; }
-  catch(e){ commentsCache[screenId] = commentsCache[screenId] || []; }
-}
-async function saveComments(screenId){
-  try{ saveStatus.textContent = 'Saving…'; await window.storage.set('barkada-mock:comments:' + screenId, JSON.stringify(commentsCache[screenId]), true); saveStatus.textContent = 'Saved'; setTimeout(()=>{ if(saveStatus.textContent==='Saved') saveStatus.textContent=''; }, 1500); }
-  catch(e){ saveStatus.textContent = 'Save failed — will retry'; }
-}
-async function refreshCurrentComments(){ const id = currentScreen().id; await loadComments(id); renderSwitcher(); renderPins(); renderComments(); }
-async function pushPresence(){
-  if (!myName) return;
-  try{
-    let all = {}; try{ const res = await window.storage.get('barkada-mock:presence', true); all = res ? JSON.parse(res.value) : {}; }catch(e){ all = {}; }
-    all[SESSION_ID] = { name: myName, screen: currentScreen().id, ts: Date.now() };
-    const cutoff = Date.now() - 30000; Object.keys(all).forEach(k=>{ if (all[k].ts < cutoff) delete all[k]; });
-    await window.storage.set('barkada-mock:presence', JSON.stringify(all), true);
-    renderPresence(all);
-  }catch(e){}
-}
-async function pollPresence(){ try{ const res = await window.storage.get('barkada-mock:presence', true); renderPresence(res ? JSON.parse(res.value) : {}); }catch(e){} }
-
-nameInput.addEventListener('input', ()=>{ myName = nameInput.value.trim(); });
-nameInput.addEventListener('blur', ()=>{ if(myName) pushPresence(); });
-
-toggleBtn.onclick = ()=>{
-  if (!myName){ nameInput.focus(); nameInput.style.borderColor = 'var(--red)'; return; }
-  commentMode = !commentMode;
-  toggleBtn.classList.toggle('active', commentMode);
-  composeAt = null;
-  renderPins();
-};
-
-pinLayer.addEventListener('click', (e)=>{
-  if (!commentMode) return;
-  if (e.target.closest('.compose-card') || e.target.closest('.pin')) return;
-  const rect = pinLayer.getBoundingClientRect();
-  const xPct = ((e.clientX - rect.left) / rect.width) * 100;
-  const yPct = ((e.clientY - rect.top) / rect.height) * 100;
-  composeAt = { x: Math.max(4,Math.min(96,xPct)), y: Math.max(4,Math.min(96,yPct)) };
-  renderPins();
-});
-
-async function submitComment(){
-  const text = document.getElementById('composeText').value.trim();
-  if (!text || !composeAt) return;
-  const id = currentScreen().id;
-  const comment = { id:'c_'+Math.random().toString(36).slice(2,9), name: myName || 'Anonymous', text, x: composeAt.x, y: composeAt.y, ts: Date.now(), resolved:false };
-  await loadComments(id);
-  commentsCache[id] = [...(commentsCache[id]||[]), comment];
-  await saveComments(id);
-  composeAt = null; commentMode = false; toggleBtn.classList.remove('active');
-  renderAll();
-}
-
-async function toggleResolve(id){
-  const screenId = currentScreen().id;
-  await loadComments(screenId);
-  commentsCache[screenId] = (commentsCache[screenId]||[]).map(c=> c.id===id ? {...c, resolved: !c.resolved} : c);
-  await saveComments(screenId);
-  renderPins(); renderComments();
-}
-
-async function init(){
-  for (const s of screens){ await loadComments(s.id); }
-  renderAll();
-  pollPresence();
-  setInterval(refreshCurrentComments, 4000);
-  setInterval(()=>{ if(myName) pushPresence(); else pollPresence(); }, 5000);
-}
-init();
+renderScreen();
 </script>
 
 </body>
