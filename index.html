@@ -179,8 +179,8 @@
 <script>
 /* ---------- app state (drives the interactive screens) ---------- */
 const state = {
-  goalName: 'Boracay Trip',
-  targetAmount: 30000,
+  goalName: '',
+  targetAmount: '',
   currentAmount: 18400,
   timeframe: 'medium', // 'short' | 'medium' | 'long' — locked to 'medium' for now
   shareAmounts: false, // off by default: activity is visible, exact contribution amounts are hidden
@@ -327,7 +327,8 @@ const screens = [
   { id:'dashboard', label:'Home Dashboard',
     render: () => {
       const tf = TIMEFRAMES[state.timeframe];
-      const pct = Math.min(100, Math.round((state.currentAmount/Math.max(1,state.targetAmount))*100));
+      const target = Number(state.targetAmount) || 0;
+      const pct = target > 0 ? Math.min(100, Math.round((state.currentAmount/target)*100)) : 0;
       const shown = state.members.slice(0,3);
       const extra = state.members.length - shown.length;
       return `
