@@ -68,27 +68,27 @@ state.transactions = state.contributions.map(c => makeTxn('contribution', c.amou
 
 // The fund itself is fixed — every barkada goal is the same short-term, 70/30 fund. There's no
 // pathway to pick; only the investor-type quiz below varies, and it's about the PERSON, not the goal.
-const FUND = { label:'Short-Term', sub:'1–2 yrs', equities:30, fixed:70 };
+const FUND = { label:'Short-Term', sub:'1+ yr', equities:30, fixed:70 };
 
 const INVESTOR_PROFILES = {
   conservative: { investorType:'Conservative Investor',
-    profileDesc:"You'd rather protect what you've already put in than chase extra growth — which fits well, since this fund is short-term (1–2 years) by design anyway.",
+    profileDesc:"You'd rather protect what you've already put in than chase extra growth — which fits well, since this fund is short-term (at least 1 year) by design anyway.",
     effects:[
-      "With only 1–2 years to grow, there's little time to recover from a big dip — the fund's fixed-income-heavy mix already leans toward protecting your principal",
+      "With as little as 1 year to grow, there's not much time to recover from a big dip — the fund's fixed-income-heavy mix already leans toward protecting your principal",
       'Consider contributing steadily rather than a single lump sum',
       'Keep your goal amount realistic for a short window rather than expecting aggressive growth',
     ]},
   moderate: { investorType:'Moderate Investor',
-    profileDesc:"You're comfortable with some short-term ups and downs, which suits a 1–2 year fund reasonably well as long as you're not counting on an exact number by a specific date.",
+    profileDesc:"You're comfortable with some short-term ups and downs, which suits this fund's at-least-1-year horizon reasonably well as long as you're not counting on an exact number by a specific date.",
     effects:[
-      "This fund's short 1–2 year horizon means growth potential is modest by design — worth setting expectations accordingly",
+      "This fund's short horizon (at least 1 year) means growth potential is modest by design — worth setting expectations accordingly",
       'The 30% equities slice can still swing in the short run, even inside a fixed-income-heavy fund',
       'Check in on progress every few months rather than daily',
     ]},
   aggressive: { investorType:'Aggressive Investor',
-    profileDesc:"You're drawn to long-term growth and can stomach volatility — worth knowing upfront that this particular fund is short-term (1–2 years), so it won't fully match that appetite.",
+    profileDesc:"You're drawn to long-term growth and can stomach volatility — worth knowing upfront that this particular fund is short-term (at least 1 year), so it won't fully match that appetite.",
     effects:[
-      "This fund won't deliver aggressive, long-term-style growth — it's built for a short 1–2 year window, not a decade",
+      "This fund won't deliver aggressive, long-term-style growth — it's built for a short window starting at 1 year, not a decade",
       'If long-term growth is really the goal, this fund is likely only part of the picture',
       'The 30% equities slice still gives some upside within that short window',
     ]},
@@ -225,7 +225,7 @@ function investorSectionHtml(investorTypeKey, checkboxId){
     </div>
     <label class="disclaimer-row" for="${checkboxId}">
       <input type="checkbox" id="${checkboxId}">
-      <span>I understand that I've been assessed as ${article} ${profile.investorType} based on my answers, that BPI Barkada FUNd is a short-term (1–2 year) fund whose 70% Fixed Income / 30% Equities mix doesn't change based on my profile, that investment values can rise and fall, and that BPI Barkada FUNd does not guarantee I will reach my goal amount or timeline. I am investing only what I can afford to set aside.</span>
+      <span>I understand that I've been assessed as ${article} ${profile.investorType} based on my answers, that BPI Barkada FUNd is a short-term (at least 1 year) fund whose 70% Fixed Income / 30% Equities mix doesn't change based on my profile, that investment values can rise and fall, and that BPI Barkada FUNd does not guarantee I will reach my goal amount or timeline. I am investing only what I can afford to set aside.</span>
     </label>
   `;
 }
@@ -238,7 +238,7 @@ function onboardRevealHtml(){
   return `
     <div class="eyebrow" style="margin-top:18px;">About BPI Barkada FUND</div>
     <div class="card">
-      <p class="muted">BPI Barkada FUND is a group investment product for young, first-time Filipino investors — you and your barkada (3+ friends) pool your contributions into one shared fund and track progress toward a goal together. The fund itself is short-term by design (1–2 years) and fixed at 70% Fixed Income (T-Bills &amp; Treasury Bonds) / 30% Equities for everyone — it's built for near-term goals like a trip or a big purchase, not long-term retirement-style investing.</p>
+      <p class="muted">BPI Barkada FUND is a group investment product for young, first-time Filipino investors — you and your barkada (3+ friends) pool your contributions into one shared fund and track progress toward a goal together. The fund itself is short-term by design (at least 1 year) and fixed at 70% Fixed Income (T-Bills &amp; Treasury Bonds) / 30% Equities for everyone — it's built for near-term goals like a trip or a big purchase, not long-term retirement-style investing.</p>
     </div>
     ${investorSectionHtml(investorType, 'onboardDisclaimerCheck')}
   `;
