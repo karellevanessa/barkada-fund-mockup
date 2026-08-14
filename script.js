@@ -35,11 +35,14 @@ function makeTxn(type, amount, fee, date, member){
 
 /* ---------- app state (drives the interactive screens) ---------- */
 const state = {
+  userRole: null, // 'creator' | 'joiner'
   goalName: '',
   targetAmount: '',
   currentAmount: 18400,
-  timeframe: 'medium', // 'short' | 'medium' | 'long' — locked to 'medium' for now
+  timeframe: 'medium', // 'short' | 'medium' | 'long'
   shareAmounts: false, // off by default: activity is visible, exact contribution amounts are hidden
+  joinCode: '',
+  joinName: '',
   members: [
     { name:'You', you:true },
     { name:'Andrea' },
@@ -63,9 +66,30 @@ const state = {
 state.transactions = state.contributions.map(c => makeTxn('contribution', c.amount, 0, c.date, c.member));
 
 const TIMEFRAMES = {
-  short:  { label:'Short-Term',  sub:'1–2 yrs',   equities:30, fixed:70, money:0 },
-  medium: { label:'Medium-Term', sub:'3–5 yrs',   equities:30, fixed:70, money:0 },
-  long:   { label:'Long-Term',   sub:'5–10+ yrs', equities:30, fixed:70, money:0 },
+  short:  { label:'Short-Term',  sub:'1–2 yrs',   equities:30, fixed:70, money:0,
+    investorType:'Conservative Investor',
+    profileDesc:"You're saving for something 1–2 years away, so protecting what you've already put in matters more than chasing extra growth.",
+    effects:[
+      'Less time to recover from a market dip before you need the money',
+      "Best paired with a goal amount you're comfortable adjusting if markets are soft near your target date",
+      'Consider contributing steadily rather than a single lump sum',
+    ]},
+  medium: { label:'Medium-Term', sub:'3–5 yrs',   equities:30, fixed:70, money:0,
+    investorType:'Moderate Investor',
+    profileDesc:'With a 3–5 year runway, you can ride out normal market swings while still keeping an eye on your target date.',
+    effects:[
+      'Enough time to recover from most short-term dips',
+      'A good balance between growth potential and predictability',
+      'Check in on progress every few months rather than daily',
+    ]},
+  long:   { label:'Long-Term',   sub:'5–10+ yrs', equities:30, fixed:70, money:0,
+    investorType:'Aggressive Investor',
+    profileDesc:"A 5+ year horizon gives your barkada's money the most room to grow — and the most time to recover if the market has a rough stretch.",
+    effects:[
+      'Highest tolerance for short-term ups and downs',
+      'Time is on your side to compound growth',
+      'Best suited if your goal amount or date has flexibility',
+    ]},
 };
 
 const COLORS = ['#A6192E','#D9A441','#2F7A4D','#3B6EA5','#8A4EA6','#C46B2C'];
@@ -159,8 +183,73 @@ function accrualRowHtml(r){
   `;
 }
 
+/* ---------- investor profile + disclaimer (shared by Set Goal and Join) ---------- */
+function investorSectionHtml(tfKey, checkboxId){
+  const tf = TIMEFRAMES[tfKey];
+  return `
+    <div class="investor-profile-box">
+      <div class="ipb-badge">${tf.investorType}</div>
+      <p class="ipb-desc">${tf.profileDesc}</p>
+      <div class="ipb-label">What this means for you</div>
+      <ul class="ipb-effects">${tf.effects.map(e=>`<li>${escapeHtml(e)}</li>`).join('')}</ul>
+    </div>
+    <label class="disclaimer-row" for="${checkboxId}">
+      <input type="checkbox" id="${checkboxId}">
+      <span>I understand that this pathway reflects a ${tf.investorType} risk profile, that investment values can rise and fall, and that BPI Barkada FUNd does not guarantee I will reach my goal amount or timeline. I am investing only what I can afford to set aside.</span>
+    </label>
+  `;
+}
+function wireDisclaimer(checkboxId, btnId){
+  const checkbox = document.getElementById(checkboxId);
+  const btn = document.getElementById(btnId);
+  if (!checkbox || !btn) return;
+  const applyState = ()=>{
+    btn.disabled = !checkbox.checked;
+    btn.style.opacity = checkbox.checked ? '' : '.5';
+    btn.style.cursor = checkbox.checked ? '' : 'not-allowed';
+  };
+  checkbox.onchange = applyState;
+  applyState();
+}
+function updateJoinSummary(){
+  const section = document.getElementById('joinSummarySection');
+  if (!section) return;
+  const codeEntered = (state.joinCode||'').trim().length > 0;
+  section.innerHTML = codeEntered ? `
+    <div class="card" style="margin-top:14px;">
+      <div class="eyebrow">You're joining</div>
+      <div class="h2" style="font-size:16px;">🎯 ${escapeHtml(state.goalName || 'Untitled Goal')}</div>
+      <p class="muted">${money(state.targetAmount)} target</p>
+    </div>
+    ${investorSectionHtml(state.timeframe, 'joinDisclaimerCheck')}
+  ` : `<p class="muted" style="margin-top:14px;">Enter an invite code to see the goal you're joining.</p>`;
+  const btn = document.getElementById('joinBarkadaBtn');
+  if (codeEntered){ wireDisclaimer('joinDisclaimerCheck', 'joinBarkadaBtn'); }
+  else if (btn){ btn.disabled = true; btn.style.opacity = '.5'; btn.style.cursor = 'not-allowed'; }
+}
+
 /* ---------- screens ---------- */
 const screens = [
+  { id:'entry', label:'Create or Join',
+    render: () => `
+      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn hamburger-btn">☰</div></div>
+      <div class="content">
+        <div class="eyebrow">Welcome</div>
+        <div class="h2">Are you starting a new Barkada Fund, or joining one?</div>
+
+        <div class="card entry-card" id="createCard" style="margin-top:14px;">
+          <div class="eyebrow">Create a Barkada Fund</div>
+          <p class="muted">Set a shared goal, choose your pathway, and invite your barkada to join.</p>
+        </div>
+
+        <div class="card entry-card" id="joinCard">
+          <div class="eyebrow">Join a Barkada Fund</div>
+          <p class="muted">Enter an invite code from a friend and join their goal.</p>
+        </div>
+      </div>
+      ${tabbarHtml('dashboard')}
+    `},
+
   { id:'onboard', label:'Onboarding Quiz',
     render: () => `
       <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn hamburger-btn">☰</div></div>
@@ -192,12 +281,15 @@ const screens = [
 
         <div class="field-label">Timeframe</div>
         <div class="timeframe-row" id="timeframeRow">
-          <div class="tf-card sel" data-tf="medium">
-            <div class="tf-name">${TIMEFRAMES.medium.label}</div>
-            <div class="tf-sub">${TIMEFRAMES.medium.sub}</div>
-          </div>
+          ${Object.entries(TIMEFRAMES).map(([key,tf])=>`
+            <div class="tf-card ${state.timeframe===key?'sel':''}" data-tf="${key}">
+              <div class="tf-name">${tf.label}</div>
+              <div class="tf-sub">${tf.sub}</div>
+            </div>
+          `).join('')}
         </div>
-        <p class="muted" style="margin-top:6px;">Short- and Long-Term pathways are coming soon — Medium-Term is available now.</p>
+
+        <div id="investorSection">${investorSectionHtml(state.timeframe, 'goalDisclaimerCheck')}</div>
 
         <div class="goal-preview">
           <div class="gp-label">Preview</div>
@@ -206,7 +298,7 @@ const screens = [
         </div>
         <p class="muted" style="text-align:center;">NAVPS ₱100 at launch · ₱500 minimum per member</p>
       </div>
-      <div style="padding:14px 20px 14px;"><button class="btn" data-goto="members">Save Goal</button></div>
+      <div style="padding:14px 20px 14px;"><button class="btn" id="saveGoalBtn" data-goto="members" disabled style="opacity:.5; cursor:not-allowed;">Save Goal</button></div>
       ${tabbarHtml('members')}
     `},
 
@@ -252,6 +344,34 @@ const screens = [
       </div>
       <div style="padding:14px 20px 14px;"><button class="btn" data-goto="dashboard">Continue to Dashboard</button></div>
       ${tabbarHtml('members')}
+    `},
+
+  { id:'join', label:'Join a Barkada',
+    render: () => `
+      <div class="appbar"><div class="icon-btn" data-goto="entry">←</div><div class="brand-name">Join a Barkada</div><div class="icon-btn hamburger-btn">☰</div></div>
+      <div class="content">
+        <div class="eyebrow">Join a barkada</div>
+        <div class="h2">Enter your invite code</div>
+
+        <div class="field-label">Invite code</div>
+        <input class="text-field" id="joinCodeInput" value="${escapeHtml(state.joinCode||'')}" placeholder="e.g. VIET-ME26-JMA">
+
+        <div class="field-label">Your name</div>
+        <input class="text-field" id="joinNameInput" value="${escapeHtml(state.joinName||'')}" placeholder="e.g. Marco">
+
+        <div id="joinSummarySection">
+          ${(state.joinCode||'').trim() ? `
+            <div class="card" style="margin-top:14px;">
+              <div class="eyebrow">You're joining</div>
+              <div class="h2" style="font-size:16px;">🎯 ${escapeHtml(state.goalName || 'Untitled Goal')}</div>
+              <p class="muted">${money(state.targetAmount)} target</p>
+            </div>
+            ${investorSectionHtml(state.timeframe, 'joinDisclaimerCheck')}
+          ` : `<p class="muted" style="margin-top:14px;">Enter an invite code to see the goal you're joining.</p>`}
+        </div>
+      </div>
+      <div style="padding:14px 20px 14px;"><button class="btn" id="joinBarkadaBtn" disabled style="opacity:.5; cursor:not-allowed;">Join Barkada</button></div>
+      ${tabbarHtml('dashboard')}
     `},
 
   { id:'dashboard', label:'Home Dashboard',
@@ -428,9 +548,11 @@ const screens = [
 ];
 
 const SIDEBAR_ITEMS = [
+  { id:'entry',     icon:'👋', label:'Create or Join' },
   { id:'dashboard', icon:'🏠', label:'Home' },
   { id:'goal',      icon:'🎯', label:'Set Goal' },
   { id:'members',   icon:'👥', label:'Barkada Members' },
+  { id:'join',      icon:'🔑', label:'Join a Barkada' },
   { id:'monitor',   icon:'💰', label:'Portfolio' },
   { id:'buy',       icon:'➕', label:'Add Funds' },
   { id:'redeem',    icon:'🔄', label:'Redeem' },
@@ -442,7 +564,7 @@ function inviteCode(){
   return `${slug}-${state.timeframe.slice(0,2).toUpperCase()}26-JMA`;
 }
 
-let currentIdx = 0; // start at onboarding — the real first-time customer flow
+let currentIdx = 0; // start on the entry screen — create vs. join is the first real decision
 
 const root = document.getElementById('screen-root');
 
@@ -493,6 +615,33 @@ function wireScreenInteractions(){
     inp.addEventListener('blur', ()=> setTimeout(fitPhoneToViewport, 300));
   });
 
+  if (id === 'entry'){
+    document.getElementById('createCard').onclick = ()=>{
+      state.userRole = 'creator';
+      goToScreen('onboard');
+    };
+    document.getElementById('joinCard').onclick = ()=>{
+      state.userRole = 'joiner';
+      goToScreen('join');
+    };
+  }
+
+  if (id === 'join'){
+    document.getElementById('joinCodeInput').addEventListener('input', (e)=>{
+      state.joinCode = e.target.value;
+      updateJoinSummary();
+    });
+    document.getElementById('joinNameInput').addEventListener('input', (e)=>{
+      state.joinName = e.target.value;
+    });
+    updateJoinSummary();
+    document.getElementById('joinBarkadaBtn').onclick = ()=>{
+      const name = (state.joinName||'').trim();
+      if (name) state.members.push({ name });
+      goToScreen('dashboard');
+    };
+  }
+
   if (id === 'goal'){
     document.getElementById('goalNameInput').addEventListener('input', (e)=>{
       state.goalName = e.target.value;
@@ -502,6 +651,17 @@ function wireScreenInteractions(){
       state.targetAmount = Number(e.target.value) || 0;
       updatePreview();
     });
+    document.querySelectorAll('#timeframeRow .tf-card').forEach(card=>{
+      card.onclick = ()=>{
+        state.timeframe = card.dataset.tf;
+        document.querySelectorAll('#timeframeRow .tf-card').forEach(c=>c.classList.remove('sel'));
+        card.classList.add('sel');
+        updatePreview();
+        document.getElementById('investorSection').innerHTML = investorSectionHtml(state.timeframe, 'goalDisclaimerCheck');
+        wireDisclaimer('goalDisclaimerCheck', 'saveGoalBtn');
+      };
+    });
+    wireDisclaimer('goalDisclaimerCheck', 'saveGoalBtn');
   }
 
   if (id === 'members'){
