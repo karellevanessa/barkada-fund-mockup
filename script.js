@@ -46,13 +46,14 @@ const state = {
   joinCode: '',
   joinName: '',
   members: [
-    { name:'You', you:true },
-    { name:'Andrea' },
-    { name:'Jules' },
+    { name:'Karelle', you:true },
+    { name:'Aly' },
+    { name:'Jae Venice' },
+    { name:'Hazel' },
   ],
   contributions: [
-    makeLot(2820.50, 95, 'You'), // unlocked (past 90 days)
-    makeLot(1000.00, 42, 'You'), // still locked, 48 days left
+    makeLot(1000.00, 42, 'Karelle'), // your first-ever contribution — the lock clock starts here, 48 days left
+    makeLot(2820.50, 10, 'Karelle'), // a later top-up — doesn't get its own clock or restart the lock
   ],
   buyAmount: 500, // amount currently entered on the Add Funds screen
   buyMode: 'onetime', // 'onetime' | 'auto'
@@ -61,8 +62,8 @@ const state = {
   redeemMode: 'full', // 'full' | 'partial'
   transactions: [],
   activity: [
-    { name:'Andrea', type:'contribution', amount:500, time:'2h ago' },
-    { name:'Jules', type:'streak', time:'1d ago' },
+    { name:'Aly', type:'contribution', amount:500, time:'2h ago' },
+    { name:'Hazel', type:'streak', time:'1d ago' },
   ]
 };
 state.transactions = state.contributions.map(c => makeTxn('contribution', c.amount, 0, c.date, c.member));
@@ -125,44 +126,46 @@ function computeInvestorType(){
 const COLORS = ['#A6192E','#D9A441','#2F7A4D','#3B6EA5','#8A4EA6','#C46B2C'];
 function colorFor(name){ let h=0; for(const c of (name||'?')) h=(h*31+c.charCodeAt(0))%COLORS.length; return COLORS[Math.abs(h)%COLORS.length]; }
 function initials(name){ return (name||'?').trim().slice(0,1).toUpperCase() || '?'; }
+function youName(){ return (state.members.find(m=>m.you)||{}).name || 'You'; }
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function money(n){ return '₱' + Number(n).toLocaleString('en-PH'); }
 function moneyExact(n){ const hasCents = Math.round(Number(n)*100) % 100 !== 0; return '₱' + Number(n).toLocaleString('en-PH', hasCents ? {minimumFractionDigits:2, maximumFractionDigits:2} : {maximumFractionDigits:0}); }
 
-/* ---------- portfolio / lot math (per-contribution 90-day clocks, locked-first redemption) ---------- */
+/* ---------- portfolio / lot math (account-level 90-day lock from the first contribution) ---------- */
 function totalRemaining(){
   return state.contributions.reduce((sum,c)=>sum+c.remaining, 0);
 }
-function lockedBreakdown(){
-  const lockedLots = state.contributions.filter(c => c.remaining > 0 && daysBetween(c.date, TODAY) < 90);
-  const lockedTotal = lockedLots.reduce((sum,c)=>sum+c.remaining, 0);
-  const soonest = lockedLots.reduce((min,c)=> (!min || daysBetween(c.date,TODAY) > daysBetween(min.date,TODAY)) ? c : min, null);
-  return { lockedTotal, soonest, soonestDaysLeft: soonest ? 90 - daysBetween(soonest.date, TODAY) : null };
+// The 90-day lock is set once, by your very first contribution — later top-ups don't get their own
+// clock and don't restart it. Once that first 90 days is up, your whole balance is fee-free.
+function firstContributionDate(){
+  return state.contributions.reduce((min,c)=> (!min || c.date < min) ? c.date : min, null);
 }
-// Still-locked contributions (under 90 days) are redeemed first, oldest-first within each group, so a
-// partial redemption always draws from — and charges the 1% fee on — locked money before touching
-// already-free money. Otherwise a small partial redemption could silently dodge the fee by coming
-// entirely out of an older, already-unlocked lot.
+function isAccountLocked(){
+  const first = firstContributionDate();
+  return first ? daysBetween(first, TODAY) < 90 : false;
+}
+function lockedBreakdown(){
+  const first = firstContributionDate();
+  const locked = isAccountLocked();
+  return {
+    lockedTotal: locked ? totalRemaining() : 0,
+    daysLeft: locked && first ? 90 - daysBetween(first, TODAY) : null,
+  };
+}
+// Fee is account-wide: 1% on whatever's redeemed while still inside the 90 days since your first
+// contribution, whichever lots the amount happens to be drawn from.
 function computeRedemption(amount){
-  const sorted = [...state.contributions].filter(c=>c.remaining>0).sort((a,b)=>{
-    const aLocked = daysBetween(a.date, TODAY) < 90;
-    const bLocked = daysBetween(b.date, TODAY) < 90;
-    if (aLocked !== bLocked) return aLocked ? -1 : 1;
-    return a.date - b.date;
-  });
+  const sorted = [...state.contributions].filter(c=>c.remaining>0).sort((a,b)=>a.date-b.date);
   let remaining = amount;
-  let fee = 0;
   const lotsUsed = [];
   for (const lot of sorted){
     if (remaining <= 0) break;
     const take = Math.min(lot.remaining, remaining);
-    const age = daysBetween(lot.date, TODAY);
-    const lotFee = age < 90 ? take * 0.01 : 0;
-    fee += lotFee;
     remaining -= take;
-    lotsUsed.push({ lot, take, age, lotFee });
+    lotsUsed.push({ lot, take });
   }
   const gross = amount - remaining;
+  const fee = isAccountLocked() ? gross * 0.01 : 0;
   return { requested: amount, gross, fee, net: gross - fee, lotsUsed };
 }
 function applyRedemption(amount){
@@ -170,7 +173,7 @@ function applyRedemption(amount){
   for (const { lot, take } of result.lotsUsed){ lot.remaining -= take; }
   state.contributions = state.contributions.filter(c => c.remaining > 0.001);
   state.currentAmount -= result.gross;
-  const txn = makeTxn('redemption', result.gross, result.fee, new Date(TODAY), 'You');
+  const txn = makeTxn('redemption', result.gross, result.fee, new Date(TODAY), youName());
   state.transactions.unshift(txn);
   return result;
 }
@@ -365,7 +368,7 @@ const screens = [
         <div class="eyebrow">Grow your barkada</div>
         <div class="h2">Invite friends to "${escapeHtml(state.goalName || 'your goal')}"</div>
         <p class="muted" style="margin-bottom:14px;">Target investors: groups of young (18-25), first-time Filipino investors — minimum 3 members per barkada.</p>
-        <p class="muted" style="margin-bottom:14px;">Friends can join anytime — each contribution starts its own 90-day fee-free clock from the day it's made, no matter when the member joins.</p>
+        <p class="muted" style="margin-bottom:14px;">Friends can join anytime — each member's 90-day lock is set by their own first contribution, not by when the goal started or when they joined.</p>
 
         <div class="invite-box">
           <div class="eyebrow" style="margin-bottom:2px;">Invite Code</div>
@@ -499,7 +502,7 @@ const screens = [
         </div>
         <p class="muted" style="text-align:center;">Debited from BPI Savings •••• 4821</p>
         <p class="muted" style="text-align:center; margin-top:6px;">🕒 Funds settle T+2 (by ${settleDate}) before they start earning.</p>
-        <p class="muted" style="text-align:center; margin-top:6px;">🔒 This ${money(state.buyAmount)} contribution unlocks fee-free 90 days from today — earlier contributions may already be past their own 90 days.</p>
+        <p class="muted" style="text-align:center; margin-top:6px;">🔒 Your account's 90-day lock is set by your first-ever contribution — adding funds now doesn't restart or extend it.</p>
       </div>
       <div style="padding:14px 20px 14px;"><button class="btn" id="confirmBuyBtn" ${state.buyAmount<=0?'disabled style="opacity:.5; cursor:not-allowed;"':''}>${btnLabel}</button></div>
       ${tabbarHtml('monitor')}
@@ -545,15 +548,15 @@ const screens = [
   { id:'redeem', label:'Redeem',
     render: () => {
       const total = totalRemaining();
-      const { lockedTotal, soonest, soonestDaysLeft } = lockedBreakdown();
+      const { lockedTotal, daysLeft } = lockedBreakdown();
       const amount = state.redeemMode === 'full' ? total : state.redeemAmount;
       const result = computeRedemption(amount);
       const settleDate = formatDate(addBusinessDays(TODAY, 2));
       return `
       <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Redeem Funds</div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
-        <div class="note" style="background:#FBEAEA; border-color:#EFC2C2; color:var(--red-dark);">🔒 Each contribution unlocks fee-free 90 days after its own investment date. You can redeem anytime — a 1% early redemption fee applies only to the portion still within its own 90 days.</div>
-        <div class="card"><div class="eyebrow">Available to withdraw</div><div class="h2" style="font-size:24px;">${moneyExact(total)}</div><p class="muted" style="margin-top:6px;">${lockedTotal>0 ? `${moneyExact(lockedTotal)} of this is still within its 90-day window${soonest?` · next portion turns fee-free in ${soonestDaysLeft} day${soonestDaysLeft===1?'':'s'}`:''}.` : 'All contributions are past their 90-day window — no fee applies.'}</p></div>
+        <div class="note" style="background:#FBEAEA; border-color:#EFC2C2; color:var(--red-dark);">🔒 Your 90-day lock is set once, by your first-ever contribution — later top-ups don't get their own clock. You can redeem anytime — a 1% early redemption fee applies to your whole balance until that first 90 days is up.</div>
+        <div class="card"><div class="eyebrow">Available to withdraw</div><div class="h2" style="font-size:24px;">${moneyExact(total)}</div><p class="muted" style="margin-top:6px;">${lockedTotal>0 ? `${moneyExact(lockedTotal)} is still within your 90-day lock · turns fee-free in ${daysLeft} day${daysLeft===1?'':'s'}.` : "You're past your 90-day lock — no fee applies."}</p></div>
 
         <div class="toggle-row" id="redeemModeRow">
           <div class="t ${state.redeemMode==='partial'?'on':''}" data-mode="partial">Partial</div>
@@ -581,6 +584,14 @@ const screens = [
         <p class="muted" style="text-align:center; margin-top:6px;">🕒 Net proceeds settle T+2 (by ${settleDate}).</p>
       </div>
       <div style="padding:14px 20px 14px;"><button class="btn" id="confirmRedeemBtn" ${result.gross<=0?'disabled style="opacity:.5; cursor:not-allowed;"':''}>Redeem ${moneyExact(result.net)}</button><button class="btn ghost" style="margin-top:10px;">Vote to End Barkada Goal</button></div>
+      <div class="confirm-backdrop" id="fullRedeemBackdrop">
+        <div class="confirm-card">
+          <div class="h2">Leave this goal?</div>
+          <p class="muted">Redeeming in full means you're leaving "${escapeHtml(state.goalName || 'this goal')}" — your entire holding is withdrawn and you're opting out of the investment entirely, not just scaling it back.</p>
+          <button class="btn" id="fullRedeemYesBtn">Yes, redeem in full</button>
+          <button class="btn ghost" id="fullRedeemCancelBtn" style="margin-top:10px;">Cancel</button>
+        </div>
+      </div>
       ${tabbarHtml('monitor')}
     `;}},
 
@@ -794,9 +805,9 @@ function wireScreenInteractions(){
       if (state.buyAmount <= 0) return;
       const now = new Date(TODAY);
       state.currentAmount += state.buyAmount;
-      state.contributions.push({ id: ++lotId, amount: state.buyAmount, remaining: state.buyAmount, date: now, member:'You' });
-      state.transactions.unshift(makeTxn('contribution', state.buyAmount, 0, now, 'You'));
-      state.activity.unshift({ name:'You', type:'contribution', amount: state.buyAmount, time:'Just now' });
+      state.contributions.push({ id: ++lotId, amount: state.buyAmount, remaining: state.buyAmount, date: now, member: youName() });
+      state.transactions.unshift(makeTxn('contribution', state.buyAmount, 0, now, youName()));
+      state.activity.unshift({ name: youName(), type:'contribution', amount: state.buyAmount, time:'Just now' });
       state.buyAmount = 500;
       goToScreen('dashboard');
     };
@@ -822,15 +833,31 @@ function wireScreenInteractions(){
         renderScreen();
       };
     });
+    const finishRedeem = (amount)=>{
+      const result = applyRedemption(amount);
+      state.activity.unshift({ name: youName(), type:'redemption', amount: result.net, time:'Just now' });
+      state.redeemAmount = 0;
+      state.redeemMode = 'full';
+      goToScreen('monitor');
+    };
     const confirmBtn = document.getElementById('confirmRedeemBtn');
     if (confirmBtn) confirmBtn.onclick = ()=>{
       const amount = state.redeemMode === 'full' ? totalRemaining() : state.redeemAmount;
       if (amount <= 0) return;
-      const result = applyRedemption(amount);
-      state.activity.unshift({ name:'You', type:'redemption', amount: result.net, time:'Just now' });
-      state.redeemAmount = 0;
-      state.redeemMode = 'full';
-      goToScreen('monitor');
+      if (state.redeemMode === 'full'){
+        document.getElementById('fullRedeemBackdrop').classList.add('open');
+        return;
+      }
+      finishRedeem(amount);
+    };
+    document.getElementById('fullRedeemCancelBtn').onclick = ()=>{
+      document.getElementById('fullRedeemBackdrop').classList.remove('open');
+    };
+    document.getElementById('fullRedeemYesBtn').onclick = ()=>{
+      finishRedeem(totalRemaining());
+    };
+    document.getElementById('fullRedeemBackdrop').onclick = (e)=>{
+      if (e.target.id === 'fullRedeemBackdrop') e.currentTarget.classList.remove('open');
     };
   }
 }
@@ -871,3 +898,37 @@ if (window.visualViewport){
 fitPhoneToViewport();
 
 renderScreen();
+
+/* ---------- demo notifications ----------
+   Real cadences would be monthly / per-transaction / daily — compressed here into
+   3-minute / 2-minute / 1-minute timers purely so the behavior is visible in a demo. */
+function showToast(icon, html, duration=4500){
+  const stack = document.getElementById('toastStack');
+  if (!stack) return;
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<span class="toast-icon">${icon}</span><span class="toast-text">${html}</span>`;
+  stack.appendChild(el);
+  requestAnimationFrame(()=> el.classList.add('show'));
+  setTimeout(()=>{
+    el.classList.remove('show');
+    setTimeout(()=> el.remove(), 300);
+  }, duration);
+}
+function notifyMonthlyReminder(){
+  showToast('💰', `<b>Reminder:</b> your monthly contribution is due — keep "${escapeHtml(state.goalName || 'your goal')}" on track.`);
+}
+function notifySomeoneInvested(){
+  const others = state.members.filter(m=>!m.you);
+  const member = others[Math.floor(Math.random()*others.length)] || { name:'A barkada member' };
+  const amount = [300,500,750,1000][Math.floor(Math.random()*4)];
+  showToast('🎉', `<b>${escapeHtml(member.name)}</b> just contributed ${money(amount)} to the goal!`);
+}
+function notifyDailyInterest(){
+  const amount = settledPrincipal() * DAILY_RATE;
+  showToast('📈', `You earned <b>${moneyExact(amount)}</b> today from interest.`);
+}
+
+setTimeout(()=>{ notifyDailyInterest(); setInterval(notifyDailyInterest, 60*1000); }, 5000);
+setTimeout(()=>{ notifySomeoneInvested(); setInterval(notifySomeoneInvested, 2*60*1000); }, 10000);
+setTimeout(()=>{ notifyMonthlyReminder(); setInterval(notifyMonthlyReminder, 3*60*1000); }, 15000);
