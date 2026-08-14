@@ -38,6 +38,7 @@ const state = {
   userRole: null, // 'creator' | 'joiner'
   investorType: 'moderate', // 'conservative' | 'moderate' | 'aggressive' — set for real once the onboarding quiz is completed
   quizAnswers: {}, // { q1: score, q2: score, q3: score }
+  quizStep: 0, // which onboarding page is showing: 0..QUIZ_QUESTIONS.length-1 are questions, QUIZ_QUESTIONS.length is the reveal page
   goalName: '',
   targetAmount: '',
   currentAmount: 18400,
@@ -128,7 +129,7 @@ function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; 
 function money(n){ return '₱' + Number(n).toLocaleString('en-PH'); }
 function moneyExact(n){ const hasCents = Math.round(Number(n)*100) % 100 !== 0; return '₱' + Number(n).toLocaleString('en-PH', hasCents ? {minimumFractionDigits:2, maximumFractionDigits:2} : {maximumFractionDigits:0}); }
 
-/* ---------- portfolio / lot math (per-contribution 90-day clocks, FIFO redemption) ---------- */
+/* ---------- portfolio / lot math (per-contribution 90-day clocks, locked-first redemption) ---------- */
 function totalRemaining(){
   return state.contributions.reduce((sum,c)=>sum+c.remaining, 0);
 }
@@ -138,9 +139,17 @@ function lockedBreakdown(){
   const soonest = lockedLots.reduce((min,c)=> (!min || daysBetween(c.date,TODAY) > daysBetween(min.date,TODAY)) ? c : min, null);
   return { lockedTotal, soonest, soonestDaysLeft: soonest ? 90 - daysBetween(soonest.date, TODAY) : null };
 }
-// FIFO: oldest contributions redeemed first. 1% fee applies only to the portion of a lot still under 90 days.
+// Still-locked contributions (under 90 days) are redeemed first, oldest-first within each group, so a
+// partial redemption always draws from — and charges the 1% fee on — locked money before touching
+// already-free money. Otherwise a small partial redemption could silently dodge the fee by coming
+// entirely out of an older, already-unlocked lot.
 function computeRedemption(amount){
-  const sorted = [...state.contributions].filter(c=>c.remaining>0).sort((a,b)=>a.date-b.date);
+  const sorted = [...state.contributions].filter(c=>c.remaining>0).sort((a,b)=>{
+    const aLocked = daysBetween(a.date, TODAY) < 90;
+    const bLocked = daysBetween(b.date, TODAY) < 90;
+    if (aLocked !== bLocked) return aLocked ? -1 : 1;
+    return a.date - b.date;
+  });
   let remaining = amount;
   let fee = 0;
   const lotsUsed = [];
@@ -229,29 +238,7 @@ function investorSectionHtml(investorTypeKey, checkboxId){
     </label>
   `;
 }
-function allQuizAnswered(){
-  return QUIZ_QUESTIONS.every(q => state.quizAnswers[q.id] != null);
-}
-function onboardRevealHtml(){
-  if (!allQuizAnswered()) return '';
-  const investorType = computeInvestorType();
-  return `
-    <div class="eyebrow" style="margin-top:18px;">About BPI Barkada FUND</div>
-    <div class="card">
-      <p class="muted">BPI Barkada FUND is a group investment product for young, first-time Filipino investors — you and your barkada (3+ friends) pool your contributions into one shared fund and track progress toward a goal together. The fund itself is short-term by design (at least 1 year) and fixed at 70% Fixed Income (T-Bills &amp; Treasury Bonds) / 30% Equities for everyone — it's built for near-term goals like a trip or a big purchase, not long-term retirement-style investing.</p>
-    </div>
-    ${investorSectionHtml(investorType, 'onboardDisclaimerCheck')}
-  `;
-}
-function updateOnboardButton(){
-  const btn = document.getElementById('onboardContinueBtn');
-  if (!btn) return;
-  const checkbox = document.getElementById('onboardDisclaimerCheck');
-  const ready = allQuizAnswered() && !!checkbox && checkbox.checked;
-  btn.disabled = !ready;
-  btn.style.opacity = ready ? '' : '.5';
-  btn.style.cursor = ready ? '' : 'not-allowed';
-}
+const QUIZ_ICONS = ['📉','💭','🎯'];
 function updateJoinSummary(){
   const section = document.getElementById('joinSummarySection');
   if (!section) return;
@@ -292,26 +279,54 @@ const screens = [
     `},
 
   { id:'onboard', label:'Onboarding Quiz',
-    render: () => `
-      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn hamburger-btn">☰</div></div>
-      <div class="content">
-        <div class="eyebrow">Quick investor check</div>
-        <div class="quiz-q">A few questions before you get started — this tells us (and you) what kind of investor you are.</div>
-        ${QUIZ_QUESTIONS.map(q=>`
-          <div class="field-label">${escapeHtml(q.q)}</div>
-          <div class="quiz-group" data-qid="${q.id}">
-            ${q.options.map(o=>`
-              <div class="opt ${state.quizAnswers[q.id]===o.score?'sel':''}" data-score="${o.score}">
-                <span>${escapeHtml(o.label)}</span><div class="radio"></div>
-              </div>
-            `).join('')}
+    render: () => {
+      const totalSteps = QUIZ_QUESTIONS.length + 1;
+      const step = Math.min(state.quizStep, totalSteps - 1);
+      const onReveal = step >= QUIZ_QUESTIONS.length;
+      const dots = Array.from({ length: totalSteps }).map((_,i)=>
+        `<div class="${i < step ? 'done' : i === step ? 'current' : ''}"></div>`
+      ).join('');
+
+      if (!onReveal){
+        const q = QUIZ_QUESTIONS[step];
+        const answered = state.quizAnswers[q.id] != null;
+        const isLast = step === QUIZ_QUESTIONS.length - 1;
+        return `
+          <div class="appbar"><div class="icon-btn" id="quizBackBtn">←</div><div class="brand-name">Investor Check</div><div class="icon-btn hamburger-btn">☰</div></div>
+          <div class="content">
+            <div class="progress-dots">${dots}</div>
+            <div class="eyebrow">Question ${step+1} of ${totalSteps}</div>
+            <div class="quiz-icon">${QUIZ_ICONS[step] || '❓'}</div>
+            <div class="quiz-q">${escapeHtml(q.q)}</div>
+            <div class="quiz-group" data-qid="${q.id}">
+              ${q.options.map(o=>`
+                <div class="opt ${state.quizAnswers[q.id]===o.score?'sel':''}" data-score="${o.score}">
+                  <span>${escapeHtml(o.label)}</span><div class="radio"></div>
+                </div>
+              `).join('')}
+            </div>
           </div>
-        `).join('')}
-        <div id="onboardReveal">${onboardRevealHtml()}</div>
-      </div>
-      <div style="padding:14px 20px 14px;"><button class="btn" id="onboardContinueBtn" disabled style="opacity:.5; cursor:not-allowed;">Continue</button></div>
-      ${tabbarHtml('dashboard')}
-    `},
+          <div style="padding:14px 20px 14px;"><button class="btn" id="quizNextBtn" ${answered?'':'disabled style="opacity:.5; cursor:not-allowed;"'}>${isLast ? 'See my investor profile' : 'Next'}</button></div>
+          ${tabbarHtml('dashboard')}
+        `;
+      }
+
+      const investorType = computeInvestorType();
+      return `
+        <div class="appbar"><div class="icon-btn" id="quizBackBtn">←</div><div class="brand-name">Investor Check</div><div class="icon-btn hamburger-btn">☰</div></div>
+        <div class="content">
+          <div class="progress-dots">${dots}</div>
+          <div class="quiz-icon">🎉</div>
+          <div class="eyebrow" style="text-align:center;">About BPI Barkada FUND</div>
+          <div class="card">
+            <p class="muted">BPI Barkada FUND is a group investment product for young, first-time Filipino investors — you and your barkada (3+ friends) pool your contributions into one shared fund and track progress toward a goal together. The fund itself is short-term by design (at least 1 year) and fixed at 70% Fixed Income (T-Bills &amp; Treasury Bonds) / 30% Equities for everyone — it's built for near-term goals like a trip or a big purchase, not long-term retirement-style investing.</p>
+          </div>
+          ${investorSectionHtml(investorType, 'onboardDisclaimerCheck')}
+        </div>
+        <div style="padding:14px 20px 14px;"><button class="btn" id="onboardContinueBtn" disabled style="opacity:.5; cursor:not-allowed;">Continue</button></div>
+        ${tabbarHtml('dashboard')}
+      `;
+    }},
 
   { id:'goal', label:'Set Investment Goal',
     render: () => `
@@ -544,6 +559,7 @@ const screens = [
           <div class="t ${state.redeemMode==='partial'?'on':''}" data-mode="partial">Partial</div>
           <div class="t ${state.redeemMode==='full'?'on':''}" data-mode="full">Full redemption</div>
         </div>
+        ${state.redeemMode==='full' ? `<p class="muted" style="margin:0 0 14px;">Redeeming in full means you're leaving "${escapeHtml(state.goalName || 'this goal')}" — your entire holding is withdrawn and you're opting out of the investment entirely, not just scaling it back.</p>` : ''}
 
         ${state.redeemMode==='partial' ? `
         <div class="amount-display" style="padding:14px 0;"><div class="cur">PHP</div><div class="num" id="redeemAmountNum">${Number(state.redeemAmount).toLocaleString('en-PH')}</div></div>
@@ -657,37 +673,51 @@ function wireScreenInteractions(){
   if (id === 'entry'){
     document.getElementById('createCard').onclick = ()=>{
       state.userRole = 'creator';
+      state.quizStep = 0;
       goToScreen('onboard');
     };
     document.getElementById('joinCard').onclick = ()=>{
       state.userRole = 'joiner';
+      state.quizStep = 0;
       goToScreen('onboard');
     };
   }
 
   if (id === 'onboard'){
-    const refreshReveal = ()=>{
-      document.getElementById('onboardReveal').innerHTML = onboardRevealHtml();
-      const checkbox = document.getElementById('onboardDisclaimerCheck');
-      if (checkbox) checkbox.onchange = updateOnboardButton;
-      updateOnboardButton();
+    const onReveal = state.quizStep >= QUIZ_QUESTIONS.length;
+
+    document.getElementById('quizBackBtn').onclick = ()=>{
+      if (state.quizStep === 0){ goToScreen('entry'); return; }
+      state.quizStep -= 1;
+      renderScreen();
     };
-    document.querySelectorAll('.quiz-group').forEach(group=>{
-      const qid = group.dataset.qid;
-      group.querySelectorAll('.opt').forEach(opt=>{
+
+    if (!onReveal){
+      const q = QUIZ_QUESTIONS[state.quizStep];
+      document.querySelectorAll('.quiz-group .opt').forEach(opt=>{
         opt.onclick = ()=>{
-          state.quizAnswers[qid] = Number(opt.dataset.score);
-          group.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
-          opt.classList.add('sel');
-          refreshReveal();
+          state.quizAnswers[q.id] = Number(opt.dataset.score);
+          renderScreen();
         };
       });
-    });
-    refreshReveal();
-    document.getElementById('onboardContinueBtn').onclick = ()=>{
-      state.investorType = computeInvestorType();
-      goToScreen(state.userRole === 'joiner' ? 'join' : 'goal');
-    };
+      document.getElementById('quizNextBtn').onclick = ()=>{
+        if (state.quizAnswers[q.id] == null) return;
+        state.quizStep += 1;
+        renderScreen();
+      };
+    } else {
+      const checkbox = document.getElementById('onboardDisclaimerCheck');
+      const btn = document.getElementById('onboardContinueBtn');
+      checkbox.onchange = ()=>{
+        btn.disabled = !checkbox.checked;
+        btn.style.opacity = checkbox.checked ? '' : '.5';
+        btn.style.cursor = checkbox.checked ? '' : 'not-allowed';
+      };
+      btn.onclick = ()=>{
+        state.investorType = computeInvestorType();
+        goToScreen(state.userRole === 'joiner' ? 'join' : 'goal');
+      };
+    }
   }
 
   if (id === 'join'){
