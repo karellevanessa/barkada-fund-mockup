@@ -41,7 +41,6 @@ const state = {
   goalName: '',
   targetAmount: '',
   currentAmount: 18400,
-  timeframe: 'medium', // 'short' | 'medium' | 'long'
   shareAmounts: false, // off by default: activity is visible, exact contribution amounts are hidden
   joinCode: '',
   joinName: '',
@@ -67,35 +66,31 @@ const state = {
 };
 state.transactions = state.contributions.map(c => makeTxn('contribution', c.amount, 0, c.date, c.member));
 
-const TIMEFRAMES = {
-  short:  { label:'Short-Term',  sub:'1–2 yrs',   equities:30, fixed:70, money:0 },
-  medium: { label:'Medium-Term', sub:'3–5 yrs',   equities:30, fixed:70, money:0 },
-  long:   { label:'Long-Term',   sub:'5–10+ yrs', equities:30, fixed:70, money:0 },
-};
+// The fund itself is fixed — every barkada goal is the same short-term, 70/30 fund. There's no
+// pathway to pick; only the investor-type quiz below varies, and it's about the PERSON, not the goal.
+const FUND = { label:'Short-Term', sub:'1–2 yrs', equities:30, fixed:70 };
 
-// Investor type is a property of the PERSON (from the onboarding quiz), not the goal —
-// every pathway above invests in the same 70% Fixed Income / 30% Equities fund regardless.
 const INVESTOR_PROFILES = {
   conservative: { investorType:'Conservative Investor',
-    profileDesc:"You'd rather protect what you've already put in than chase extra growth — even short-term dips make you uneasy.",
+    profileDesc:"You'd rather protect what you've already put in than chase extra growth — which fits well, since this fund is short-term (1–2 years) by design anyway.",
     effects:[
-      'Best paired with a goal amount and date you can adjust if needed',
+      "With only 1–2 years to grow, there's little time to recover from a big dip — the fund's fixed-income-heavy mix already leans toward protecting your principal",
       'Consider contributing steadily rather than a single lump sum',
-      'Keep an eye on progress more often, since swings will feel bigger to you',
+      'Keep your goal amount realistic for a short window rather than expecting aggressive growth',
     ]},
   moderate: { investorType:'Moderate Investor',
-    profileDesc:"You're comfortable riding out normal market swings as long as you're not watching the balance every day.",
+    profileDesc:"You're comfortable with some short-term ups and downs, which suits a 1–2 year fund reasonably well as long as you're not counting on an exact number by a specific date.",
     effects:[
-      'A good balance between growth potential and predictability',
-      'Enough patience to recover from most short-term dips',
+      "This fund's short 1–2 year horizon means growth potential is modest by design — worth setting expectations accordingly",
+      'The 30% equities slice can still swing in the short run, even inside a fixed-income-heavy fund',
       'Check in on progress every few months rather than daily',
     ]},
   aggressive: { investorType:'Aggressive Investor',
-    profileDesc:"You're focused on long-term growth and can stomach short-term ups and downs along the way.",
+    profileDesc:"You're drawn to long-term growth and can stomach volatility — worth knowing upfront that this particular fund is short-term (1–2 years), so it won't fully match that appetite.",
     effects:[
-      'Highest tolerance for short-term volatility',
-      'Time is on your side to compound growth',
-      'Best suited if your goal amount or date has flexibility',
+      "This fund won't deliver aggressive, long-term-style growth — it's built for a short 1–2 year window, not a decade",
+      'If long-term growth is really the goal, this fund is likely only part of the picture',
+      'The 30% equities slice still gives some upside within that short window',
     ]},
 };
 
@@ -106,17 +101,17 @@ const QUIZ_QUESTIONS = [
       { label:'Hold and wait it out', score:2 },
       { label:'See it as a chance to add more', score:3 },
     ]},
-  { id:'q2', q:'How long can you leave this money untouched?',
+  { id:'q2', q:'How would a 10% drop in this money affect your day-to-day life?',
     options:[
-      { label:'Less than 2 years', score:1 },
-      { label:'2–5 years', score:2 },
-      { label:'5+ years', score:3 },
+      { label:"I'd be seriously stressed — I need this money to stay safe", score:1 },
+      { label:"I'd be a little uneasy, but okay", score:2 },
+      { label:"It wouldn't bother me — this is money I can afford to risk", score:3 },
     ]},
-  { id:'q3', q:'Which matters more to you?',
+  { id:'q3', q:'Which best describes your investing experience so far?',
     options:[
-      { label:'Protecting what I put in', score:1 },
-      { label:'A balance of growth and safety', score:2 },
-      { label:'Maximizing long-term growth', score:3 },
+      { label:"New to investing — I'd rather play it safe", score:1 },
+      { label:"Some experience — I'm comfortable with moderate risk", score:2 },
+      { label:'Experienced — comfortable taking on more risk for more growth', score:3 },
     ]},
 ];
 function computeInvestorType(){
@@ -217,9 +212,10 @@ function accrualRowHtml(r){
   `;
 }
 
-/* ---------- investor profile + disclaimer (shared by Set Goal and Join) ---------- */
+/* ---------- investor profile + disclaimer (onboarding only — accepted once, upfront) ---------- */
 function investorSectionHtml(investorTypeKey, checkboxId){
   const profile = INVESTOR_PROFILES[investorTypeKey];
+  const article = /^[aeiou]/i.test(profile.investorType) ? 'an' : 'a';
   return `
     <div class="investor-profile-box">
       <div class="ipb-badge">${profile.investorType}</div>
@@ -229,21 +225,32 @@ function investorSectionHtml(investorTypeKey, checkboxId){
     </div>
     <label class="disclaimer-row" for="${checkboxId}">
       <input type="checkbox" id="${checkboxId}">
-      <span>I understand that I've been assessed as a ${profile.investorType} based on my onboarding answers, that investment values can rise and fall, and that BPI Barkada FUNd does not guarantee I will reach my goal amount or timeline. I am investing only what I can afford to set aside.</span>
+      <span>I understand that I've been assessed as ${article} ${profile.investorType} based on my answers, that BPI Barkada FUNd is a short-term (1–2 year) fund whose 70% Fixed Income / 30% Equities mix doesn't change based on my profile, that investment values can rise and fall, and that BPI Barkada FUNd does not guarantee I will reach my goal amount or timeline. I am investing only what I can afford to set aside.</span>
     </label>
   `;
 }
-function wireDisclaimer(checkboxId, btnId){
-  const checkbox = document.getElementById(checkboxId);
-  const btn = document.getElementById(btnId);
-  if (!checkbox || !btn) return;
-  const applyState = ()=>{
-    btn.disabled = !checkbox.checked;
-    btn.style.opacity = checkbox.checked ? '' : '.5';
-    btn.style.cursor = checkbox.checked ? '' : 'not-allowed';
-  };
-  checkbox.onchange = applyState;
-  applyState();
+function allQuizAnswered(){
+  return QUIZ_QUESTIONS.every(q => state.quizAnswers[q.id] != null);
+}
+function onboardRevealHtml(){
+  if (!allQuizAnswered()) return '';
+  const investorType = computeInvestorType();
+  return `
+    <div class="eyebrow" style="margin-top:18px;">About BPI Barkada FUND</div>
+    <div class="card">
+      <p class="muted">BPI Barkada FUND is a group investment product for young, first-time Filipino investors — you and your barkada (3+ friends) pool your contributions into one shared fund and track progress toward a goal together. The fund itself is short-term by design (1–2 years) and fixed at 70% Fixed Income (T-Bills &amp; Treasury Bonds) / 30% Equities for everyone — it's built for near-term goals like a trip or a big purchase, not long-term retirement-style investing.</p>
+    </div>
+    ${investorSectionHtml(investorType, 'onboardDisclaimerCheck')}
+  `;
+}
+function updateOnboardButton(){
+  const btn = document.getElementById('onboardContinueBtn');
+  if (!btn) return;
+  const checkbox = document.getElementById('onboardDisclaimerCheck');
+  const ready = allQuizAnswered() && !!checkbox && checkbox.checked;
+  btn.disabled = !ready;
+  btn.style.opacity = ready ? '' : '.5';
+  btn.style.cursor = ready ? '' : 'not-allowed';
 }
 function updateJoinSummary(){
   const section = document.getElementById('joinSummarySection');
@@ -255,23 +262,11 @@ function updateJoinSummary(){
       <div class="h2" style="font-size:16px;">🎯 ${escapeHtml(state.goalName || 'Untitled Goal')}</div>
       <p class="muted">${money(state.targetAmount)} target</p>
     </div>
-    <div class="eyebrow" style="margin-top:14px;">Your Investor Profile</div>
-    ${investorSectionHtml(state.investorType, 'joinDisclaimerCheck')}
   ` : `<p class="muted" style="margin-top:14px;">Enter an invite code to see the goal you're joining.</p>`;
   const btn = document.getElementById('joinBarkadaBtn');
-  if (codeEntered){ wireDisclaimer('joinDisclaimerCheck', 'joinBarkadaBtn'); }
-  else if (btn){ btn.disabled = true; btn.style.opacity = '.5'; btn.style.cursor = 'not-allowed'; }
-}
-function allQuizAnswered(){
-  return QUIZ_QUESTIONS.every(q => state.quizAnswers[q.id] != null);
-}
-function updateOnboardButton(){
-  const btn = document.getElementById('onboardContinueBtn');
-  if (!btn) return;
-  const ready = allQuizAnswered();
-  btn.disabled = !ready;
-  btn.style.opacity = ready ? '' : '.5';
-  btn.style.cursor = ready ? '' : 'not-allowed';
+  btn.disabled = !codeEntered;
+  btn.style.opacity = codeEntered ? '' : '.5';
+  btn.style.cursor = codeEntered ? '' : 'not-allowed';
 }
 
 /* ---------- screens ---------- */
@@ -285,7 +280,7 @@ const screens = [
 
         <div class="card entry-card" id="createCard" style="margin-top:14px;">
           <div class="eyebrow">Create a Barkada Fund</div>
-          <p class="muted">Set a shared goal, choose your pathway, and invite your barkada to join.</p>
+          <p class="muted">Set a shared goal and invite your barkada to join.</p>
         </div>
 
         <div class="card entry-card" id="joinCard">
@@ -301,7 +296,7 @@ const screens = [
       <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
         <div class="eyebrow">Quick investor check</div>
-        <div class="quiz-q">A few questions before you get started — this tells us (and you) what kind of investor you are. The fund itself is the same either way.</div>
+        <div class="quiz-q">A few questions before you get started — this tells us (and you) what kind of investor you are.</div>
         ${QUIZ_QUESTIONS.map(q=>`
           <div class="field-label">${escapeHtml(q.q)}</div>
           <div class="quiz-group" data-qid="${q.id}">
@@ -312,6 +307,7 @@ const screens = [
             `).join('')}
           </div>
         `).join('')}
+        <div id="onboardReveal">${onboardRevealHtml()}</div>
       </div>
       <div style="padding:14px 20px 14px;"><button class="btn" id="onboardContinueBtn" disabled style="opacity:.5; cursor:not-allowed;">Continue</button></div>
       ${tabbarHtml('dashboard')}
@@ -330,27 +326,20 @@ const screens = [
         <div class="field-label">Target amount</div>
         <div class="amount-field-wrap"><span>₱</span><input id="goalAmountInput" type="number" value="${state.targetAmount}" placeholder="30000"></div>
 
-        <div class="field-label">Timeframe</div>
-        <div class="timeframe-row" id="timeframeRow">
-          ${Object.entries(TIMEFRAMES).map(([key,tf])=>`
-            <div class="tf-card ${state.timeframe===key?'sel':''}" data-tf="${key}">
-              <div class="tf-name">${tf.label}</div>
-              <div class="tf-sub">${tf.sub}</div>
-            </div>
-          `).join('')}
+        <div class="field-label">Fund Type</div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="h2" style="font-size:14px; margin-bottom:2px;">${FUND.label} · ${FUND.sub}</div>
+          <p class="muted">${FUND.fixed}% Fixed Income (T-Bills &amp; Treasury Bonds) / ${FUND.equities}% Equities — every barkada goal uses this same fund.</p>
         </div>
-        <p class="muted" style="margin-top:6px;">Every pathway invests in the same 70% Fixed Income / 30% Equities fund — your timeframe just sets your own pacing and expectations, not a different mix.</p>
-
-        <div id="investorSection">${investorSectionHtml(state.investorType, 'goalDisclaimerCheck')}</div>
 
         <div class="goal-preview">
           <div class="gp-label">Preview</div>
           <div class="gp-name">🎯 ${escapeHtml(state.goalName || 'Untitled Goal')}</div>
-          <div class="gp-amt">${money(state.targetAmount)} target · ${TIMEFRAMES[state.timeframe].label} · 70% Fixed Income / 30% Equities</div>
+          <div class="gp-amt">${money(state.targetAmount)} target · ${FUND.label} · ${FUND.fixed}% Fixed Income / ${FUND.equities}% Equities</div>
         </div>
         <p class="muted" style="text-align:center;">NAVPS ₱100 at launch · ₱500 minimum per member</p>
       </div>
-      <div style="padding:14px 20px 14px;"><button class="btn" id="saveGoalBtn" data-goto="members" disabled style="opacity:.5; cursor:not-allowed;">Save Goal</button></div>
+      <div style="padding:14px 20px 14px;"><button class="btn" data-goto="members">Save Goal</button></div>
       ${tabbarHtml('members')}
     `},
 
@@ -418,8 +407,6 @@ const screens = [
               <div class="h2" style="font-size:16px;">🎯 ${escapeHtml(state.goalName || 'Untitled Goal')}</div>
               <p class="muted">${money(state.targetAmount)} target</p>
             </div>
-            <div class="eyebrow" style="margin-top:14px;">Your Investor Profile</div>
-            ${investorSectionHtml(state.investorType, 'joinDisclaimerCheck')}
           ` : `<p class="muted" style="margin-top:14px;">Enter an invite code to see the goal you're joining.</p>`}
         </div>
       </div>
@@ -429,7 +416,6 @@ const screens = [
 
   { id:'dashboard', label:'Home Dashboard',
     render: () => {
-      const tf = TIMEFRAMES[state.timeframe];
       const target = Number(state.targetAmount) || 0;
       const pct = target > 0 ? Math.min(100, Math.round((state.currentAmount/target)*100)) : 0;
       const shown = state.members.slice(0,3);
@@ -446,7 +432,7 @@ const screens = [
           <div class="bw-track"><div class="bw-fill" style="width:${pct}%;"></div></div>
           <div class="bw-foot"><span>${pct}% there</span><span>${state.members.length} members active</span></div>
         </div>
-        <div class="card portfolio-card"><div><div class="eyebrow">Your Portfolio</div><div class="val">${moneyExact(totalRemaining())}</div><div class="gain">▲ 4.2% this month</div></div><div class="pill">${tf.label}</div></div>
+        <div class="card portfolio-card"><div><div class="eyebrow">Your Portfolio</div><div class="val">${moneyExact(totalRemaining())}</div><div class="gain">▲ 4.2% this month</div></div><div class="pill">${FUND.label}</div></div>
         ${pct>=50?`<div class="note" style="background:var(--green-bg); border-color:#B9DCC4; color:var(--green);">🎉 Milestone unlocked! Your barkada hit ${pct}% of your goal — cashback reward applied.</div>`:''}
         <div class="card"><div class="eyebrow">Barkada Activity</div>
           ${state.activity.map(a=>`
@@ -614,7 +600,7 @@ const SIDEBAR_ITEMS = [
 
 function inviteCode(){
   const slug = (state.goalName||'GOAL').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4) || 'GOAL';
-  return `${slug}-${state.timeframe.slice(0,2).toUpperCase()}26-JMA`;
+  return `${slug}-ST26-JMA`;
 }
 
 let currentIdx = 0; // start on the entry screen — create vs. join is the first real decision
@@ -680,6 +666,12 @@ function wireScreenInteractions(){
   }
 
   if (id === 'onboard'){
+    const refreshReveal = ()=>{
+      document.getElementById('onboardReveal').innerHTML = onboardRevealHtml();
+      const checkbox = document.getElementById('onboardDisclaimerCheck');
+      if (checkbox) checkbox.onchange = updateOnboardButton;
+      updateOnboardButton();
+    };
     document.querySelectorAll('.quiz-group').forEach(group=>{
       const qid = group.dataset.qid;
       group.querySelectorAll('.opt').forEach(opt=>{
@@ -687,11 +679,11 @@ function wireScreenInteractions(){
           state.quizAnswers[qid] = Number(opt.dataset.score);
           group.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
           opt.classList.add('sel');
-          updateOnboardButton();
+          refreshReveal();
         };
       });
     });
-    updateOnboardButton();
+    refreshReveal();
     document.getElementById('onboardContinueBtn').onclick = ()=>{
       state.investorType = computeInvestorType();
       goToScreen(state.userRole === 'joiner' ? 'join' : 'goal');
@@ -723,15 +715,6 @@ function wireScreenInteractions(){
       state.targetAmount = Number(e.target.value) || 0;
       updatePreview();
     });
-    document.querySelectorAll('#timeframeRow .tf-card').forEach(card=>{
-      card.onclick = ()=>{
-        state.timeframe = card.dataset.tf;
-        document.querySelectorAll('#timeframeRow .tf-card').forEach(c=>c.classList.remove('sel'));
-        card.classList.add('sel');
-        updatePreview();
-      };
-    });
-    wireDisclaimer('goalDisclaimerCheck', 'saveGoalBtn');
   }
 
   if (id === 'members'){
@@ -834,9 +817,8 @@ function addMember(){
 function updatePreview(){
   const box = document.querySelector('.goal-preview');
   if (!box) return;
-  const tf = TIMEFRAMES[state.timeframe];
   box.querySelector('.gp-name').textContent = '🎯 ' + (state.goalName || 'Untitled Goal');
-  box.querySelector('.gp-amt').textContent = `${money(state.targetAmount)} target · ${tf.label} pathway (${tf.fixed}% Fixed Income / ${tf.equities}% Equities)`;
+  box.querySelector('.gp-amt').textContent = `${money(state.targetAmount)} target · ${FUND.label} · ${FUND.fixed}% Fixed Income / ${FUND.equities}% Equities`;
 }
 
 document.getElementById('sidebarBackdrop').onclick = closeSidebar;
