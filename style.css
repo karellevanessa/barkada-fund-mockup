@@ -149,6 +149,9 @@ body{ background:#EDE7DE; font-family:'Manrope','Segoe UI',system-ui,sans-serif;
 .entry-card{ cursor:pointer; transition:.15s; }
 .entry-card:hover{ border-color:var(--red); }
 
+.quiz-group{ margin-bottom:18px; }
+.quiz-group .opt{ cursor:pointer; }
+
 .sidebar-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.45); opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:40; }
 .sidebar-backdrop.open{ opacity:1; pointer-events:auto; }
 .sidebar{ position:absolute; top:0; left:0; bottom:0; width:78%; max-width:280px; background:var(--paper); z-index:50; transform:translateX(-100%); transition:transform .25s ease; display:flex; flex-direction:column; box-shadow:8px 0 24px rgba(0,0,0,.2); }
