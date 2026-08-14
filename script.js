@@ -355,7 +355,7 @@ const screens = [
           <div class="gp-name">🎯 ${escapeHtml(state.goalName || 'Untitled Goal')}</div>
           <div class="gp-amt">${money(state.targetAmount)} target · ${FUND.label} · ${FUND.fixed}% Fixed Income / ${FUND.equities}% Equities</div>
         </div>
-        <p class="muted" style="text-align:center;">NAVPS ₱100 at launch · ₱500 minimum per member</p>
+        <p class="muted" style="text-align:center;">₱50 minimum per member</p>
       </div>
       <div style="padding:14px 20px 14px;"><button class="btn" data-goto="members">Save Goal</button></div>
       ${tabbarHtml('members')}
@@ -603,7 +603,7 @@ const screens = [
       return `
       <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Transaction History</div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
-        <div class="note">💡 Daily interest accrual below is an illustrative estimate on your current settled balance at the blended ${(RATES.blended*100).toFixed(1)}% p.a. rate — actual NAVPS movement may vary day to day.</div>
+        <div class="note">💡 Daily interest accrual below is an illustrative estimate on your current settled balance at the blended ${(RATES.blended*100).toFixed(1)}% p.a. rate — actual returns may vary day to day.</div>
         <div class="card">
           ${all.map(row => row.kind==='txn' ? txnRowHtml(row) : accrualRowHtml(row)).join('')}
         </div>
