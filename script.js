@@ -1,3 +1,38 @@
+/* ---------- date & investment math helpers ---------- */
+const TODAY = new Date();
+
+function addDays(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
+function addBusinessDays(date, n){
+  const d = new Date(date);
+  let added = 0;
+  while (added < n){
+    d.setDate(d.getDate()+1);
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) added++;
+  }
+  return d;
+}
+function daysBetween(a, b){ return Math.floor((b - a) / 86400000); }
+function formatDate(d){ return d.toLocaleDateString('en-PH', { month:'short', day:'numeric' }); }
+function isSettled(date){ return TODAY >= addBusinessDays(date, 2); }
+
+// 70% Fixed Income (T-Bills & Treasury Bonds) / 30% Equities — illustrative target rates, not guaranteed
+const RATES = { fixed: 0.06, equities: 0.08 };
+RATES.blended = 0.7 * RATES.fixed + 0.3 * RATES.equities;
+const DAILY_RATE = Math.pow(1 + RATES.blended, 1/365) - 1;
+
+function projectedEarnings(principal, days){
+  return principal * (Math.pow(1 + RATES.blended, days/365) - 1);
+}
+
+let lotId = 0, txnId = 0;
+function makeLot(amount, daysAgo, member){
+  return { id: ++lotId, amount, remaining: amount, date: addDays(TODAY, -daysAgo), member };
+}
+function makeTxn(type, amount, fee, date, member){
+  return { id: ++txnId, type, amount, fee, date, settleDate: addBusinessDays(date, 2), member };
+}
+
 /* ---------- app state (drives the interactive screens) ---------- */
 const state = {
   goalName: '',
@@ -11,20 +46,26 @@ const state = {
     { name:'Jules' },
   ],
   contributions: [
-    { amount: 2820.50, daysAgo: 95 }, // unlocked (past 90 days)
-    { amount: 1000.00, daysAgo: 42 }, // still locked, 48 days left
+    makeLot(2820.50, 95, 'You'), // unlocked (past 90 days)
+    makeLot(1000.00, 42, 'You'), // still locked, 48 days left
   ],
   buyAmount: 500, // amount currently entered on the Add Funds screen
+  buyMode: 'onetime', // 'onetime' | 'auto'
+  autoFrequency: 'monthly', // 'daily' | 'biweekly' | 'monthly'
+  redeemAmount: 0, // amount currently entered on the Redeem screen (partial mode)
+  redeemMode: 'full', // 'full' | 'partial'
+  transactions: [],
   activity: [
     { name:'Andrea', type:'contribution', amount:500, time:'2h ago' },
     { name:'Jules', type:'streak', time:'1d ago' },
   ]
 };
+state.transactions = state.contributions.map(c => makeTxn('contribution', c.amount, 0, c.date, c.member));
 
 const TIMEFRAMES = {
-  short:  { label:'Short-Term',  sub:'1–2 yrs',   equities:100, fixed:0, money:0 },
-  medium: { label:'Medium-Term', sub:'3–5 yrs',   equities:100, fixed:0, money:0 },
-  long:   { label:'Long-Term',   sub:'5–10+ yrs', equities:100, fixed:0, money:0 },
+  short:  { label:'Short-Term',  sub:'1–2 yrs',   equities:30, fixed:70, money:0 },
+  medium: { label:'Medium-Term', sub:'3–5 yrs',   equities:30, fixed:70, money:0 },
+  long:   { label:'Long-Term',   sub:'5–10+ yrs', equities:30, fixed:70, money:0 },
 };
 
 const COLORS = ['#A6192E','#D9A441','#2F7A4D','#3B6EA5','#8A4EA6','#C46B2C'];
@@ -33,12 +74,53 @@ function initials(name){ return (name||'?').trim().slice(0,1).toUpperCase() || '
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function money(n){ return '₱' + Number(n).toLocaleString('en-PH'); }
 function moneyExact(n){ const hasCents = Math.round(Number(n)*100) % 100 !== 0; return '₱' + Number(n).toLocaleString('en-PH', hasCents ? {minimumFractionDigits:2, maximumFractionDigits:2} : {maximumFractionDigits:0}); }
-function contributionsSummary(){
-  const available = state.contributions.filter(c=>c.daysAgo>=90).reduce((sum,c)=>sum+c.amount, 0);
-  const locked = state.contributions.filter(c=>c.daysAgo<90);
-  const lockedTotal = locked.reduce((sum,c)=>sum+c.amount, 0);
-  const soonest = locked.reduce((min,c)=> (!min || c.daysAgo>min.daysAgo) ? c : min, null);
-  return { available, lockedTotal, soonest, soonestDaysLeft: soonest ? 90 - soonest.daysAgo : null };
+
+/* ---------- portfolio / lot math (per-contribution 90-day clocks, FIFO redemption) ---------- */
+function totalRemaining(){
+  return state.contributions.reduce((sum,c)=>sum+c.remaining, 0);
+}
+function lockedBreakdown(){
+  const lockedLots = state.contributions.filter(c => c.remaining > 0 && daysBetween(c.date, TODAY) < 90);
+  const lockedTotal = lockedLots.reduce((sum,c)=>sum+c.remaining, 0);
+  const soonest = lockedLots.reduce((min,c)=> (!min || daysBetween(c.date,TODAY) > daysBetween(min.date,TODAY)) ? c : min, null);
+  return { lockedTotal, soonest, soonestDaysLeft: soonest ? 90 - daysBetween(soonest.date, TODAY) : null };
+}
+// FIFO: oldest contributions redeemed first. 1% fee applies only to the portion of a lot still under 90 days.
+function computeRedemption(amount){
+  const sorted = [...state.contributions].filter(c=>c.remaining>0).sort((a,b)=>a.date-b.date);
+  let remaining = amount;
+  let fee = 0;
+  const lotsUsed = [];
+  for (const lot of sorted){
+    if (remaining <= 0) break;
+    const take = Math.min(lot.remaining, remaining);
+    const age = daysBetween(lot.date, TODAY);
+    const lotFee = age < 90 ? take * 0.01 : 0;
+    fee += lotFee;
+    remaining -= take;
+    lotsUsed.push({ lot, take, age, lotFee });
+  }
+  const gross = amount - remaining;
+  return { requested: amount, gross, fee, net: gross - fee, lotsUsed };
+}
+function applyRedemption(amount){
+  const result = computeRedemption(amount);
+  for (const { lot, take } of result.lotsUsed){ lot.remaining -= take; }
+  state.contributions = state.contributions.filter(c => c.remaining > 0.001);
+  state.currentAmount -= result.gross;
+  const txn = makeTxn('redemption', result.gross, result.fee, new Date(TODAY), 'You');
+  state.transactions.unshift(txn);
+  return result;
+}
+function settledPrincipal(){
+  return state.contributions.filter(c=>isSettled(c.date)).reduce((sum,c)=>sum+c.remaining, 0);
+}
+function dailyAccrualRows(days){
+  const principal = settledPrincipal();
+  const dailyAmt = principal * DAILY_RATE;
+  const rows = [];
+  for (let i=0; i<days; i++) rows.push({ date: addDays(TODAY, -i), amount: dailyAmt });
+  return rows;
 }
 
 function tabbarHtml(active){
@@ -49,6 +131,32 @@ function tabbarHtml(active){
     { id:'profile',   icon:'👤', label:'Profile' },
   ];
   return `<div class="tabbar">${tabs.map(t=>`<div class="tab ${t.id===active?'active':''}" ${t.id!=='profile'?`data-goto="${t.id}"`:''}>${t.icon}<br>${t.label}</div>`).join('')}</div>`;
+}
+
+function txnRowHtml(t){
+  const settled = isSettled(t.date);
+  const isRedeem = t.type === 'redemption';
+  const title = isRedeem ? 'You redeemed' : 'You contributed';
+  return `
+    <div class="activity-row txn-row">
+      <div class="activity-av">${isRedeem?'↩':'↑'}</div>
+      <div class="activity-text">
+        <b>${title} ${moneyExact(t.amount)}</b>
+        ${t.fee>0?`<br><span class="muted" style="font-size:10.5px;">1% early redemption fee: −${moneyExact(t.fee)}</span>`:''}
+        <br><span class="status-pill ${settled?'settled':'pending'}">${settled?'Settled':'Pending · settles '+formatDate(t.settleDate)}</span>
+      </div>
+      <div class="activity-time">${formatDate(t.date)}</div>
+    </div>
+  `;
+}
+function accrualRowHtml(r){
+  return `
+    <div class="accrual-row">
+      <span>📈 Daily interest accrual</span>
+      <span>+${moneyExact(r.amount)}</span>
+      <span class="accrual-date">${formatDate(r.date)}</span>
+    </div>
+  `;
 }
 
 /* ---------- screens ---------- */
@@ -94,7 +202,7 @@ const screens = [
         <div class="goal-preview">
           <div class="gp-label">Preview</div>
           <div class="gp-name">🎯 ${escapeHtml(state.goalName || 'Untitled Goal')}</div>
-          <div class="gp-amt">${money(state.targetAmount)} target · ${TIMEFRAMES[state.timeframe].label} · 100% equities</div>
+          <div class="gp-amt">${money(state.targetAmount)} target · ${TIMEFRAMES[state.timeframe].label} · 70% Fixed Income / 30% Equities</div>
         </div>
         <p class="muted" style="text-align:center;">NAVPS ₱100 at launch · ₱500 minimum per member</p>
       </div>
@@ -109,6 +217,7 @@ const screens = [
         <div class="eyebrow">Grow your barkada</div>
         <div class="h2">Invite friends to "${escapeHtml(state.goalName || 'your goal')}"</div>
         <p class="muted" style="margin-bottom:14px;">Target investors: groups of young (18-25), first-time Filipino investors — minimum 3 members per barkada.</p>
+        <p class="muted" style="margin-bottom:14px;">Friends can join anytime — each contribution starts its own 90-day fee-free clock from the day it's made, no matter when the member joins.</p>
 
         <div class="invite-box">
           <div class="eyebrow" style="margin-bottom:2px;">Invite Code</div>
@@ -164,11 +273,15 @@ const screens = [
           <div class="bw-track"><div class="bw-fill" style="width:${pct}%;"></div></div>
           <div class="bw-foot"><span>${pct}% there</span><span>${state.members.length} members active</span></div>
         </div>
-        <div class="card portfolio-card"><div><div class="eyebrow">Your Portfolio</div><div class="val">₱3,820.50</div><div class="gain">▲ 4.2% this month</div></div><div class="pill">${tf.label}</div></div>
+        <div class="card portfolio-card"><div><div class="eyebrow">Your Portfolio</div><div class="val">${moneyExact(totalRemaining())}</div><div class="gain">▲ 4.2% this month</div></div><div class="pill">${tf.label}</div></div>
         ${pct>=50?`<div class="note" style="background:var(--green-bg); border-color:#B9DCC4; color:var(--green);">🎉 Milestone unlocked! Your barkada hit ${pct}% of your goal — cashback reward applied.</div>`:''}
         <div class="card"><div class="eyebrow">Barkada Activity</div>
           ${state.activity.map(a=>`
-            <div class="activity-row"><div class="activity-av">${initials(a.name)}</div><div class="activity-text"><b>${escapeHtml(a.name)}</b> ${a.type==='contribution' ? (state.shareAmounts ? `contributed ${money(a.amount)}` : 'contributed to the goal') : 'hit a 3-month streak 🔥'}</div><div class="activity-time">${a.time}</div></div>
+            <div class="activity-row"><div class="activity-av">${initials(a.name)}</div><div class="activity-text"><b>${escapeHtml(a.name)}</b> ${
+              a.type==='contribution' ? (state.shareAmounts ? `contributed ${money(a.amount)}` : 'contributed to the goal')
+              : a.type==='redemption' ? (state.shareAmounts ? `redeemed ${money(a.amount)}` : 'redeemed funds')
+              : 'hit a 3-month streak 🔥'
+            }</div><div class="activity-time">${a.time}</div></div>
           `).join('')}
         </div>
       </div>
@@ -176,61 +289,140 @@ const screens = [
     `;}},
 
   { id:'buy', label:'Add Funds',
-    render: () => `
+    render: () => {
+      const freqLabel = { daily:'day', biweekly:'2 weeks', monthly:'month' }[state.autoFrequency];
+      const btnLabel = state.buyMode==='onetime'
+        ? `Confirm ${money(state.buyAmount)} one-time`
+        : `Confirm ${money(state.buyAmount)} / ${freqLabel}`;
+      const settleDate = formatDate(addBusinessDays(TODAY, 2));
+      return `
       <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Add Funds</div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
         <div class="amount-display"><div class="cur">PHP</div><div class="num" id="buyAmountNum">${state.buyAmount.toLocaleString('en-PH')}</div><p class="muted">Contributing to <b>${escapeHtml(state.goalName || 'your goal')}</b></p></div>
-        <div class="toggle-row"><div class="t">One-time</div><div class="t on">Monthly auto-debit</div></div>
+        <div class="toggle-row" id="buyModeRow">
+          <div class="t ${state.buyMode==='onetime'?'on':''}" data-mode="onetime">One-time</div>
+          <div class="t ${state.buyMode==='auto'?'on':''}" data-mode="auto">Auto-debit</div>
+        </div>
+        ${state.buyMode==='auto' ? `
+        <div class="freq-row" id="freqRow">
+          <div class="freq-chip ${state.autoFrequency==='daily'?'sel':''}" data-freq="daily">Daily</div>
+          <div class="freq-chip ${state.autoFrequency==='biweekly'?'sel':''}" data-freq="biweekly">Biweekly</div>
+          <div class="freq-chip ${state.autoFrequency==='monthly'?'sel':''}" data-freq="monthly">Monthly</div>
+        </div>` : ''}
         <div class="keypad">
           <div class="key" data-key="1">1</div><div class="key" data-key="2">2</div><div class="key" data-key="3">3</div>
           <div class="key" data-key="4">4</div><div class="key" data-key="5">5</div><div class="key" data-key="6">6</div>
           <div class="key" data-key="7">7</div><div class="key" data-key="8">8</div><div class="key" data-key="9">9</div>
           <div class="key" style="opacity:.4; cursor:default;">₱</div><div class="key" data-key="0">0</div><div class="key" data-key="back">⌫</div>
         </div>
+        <div class="card">
+          <div class="eyebrow">If you keep this invested…</div>
+          ${[90,120,360].map(d=>{
+            const earn = projectedEarnings(state.buyAmount, d);
+            return `<div class="projection-row"><span>${d} days</span><span>+${moneyExact(earn)}</span><span class="muted">${moneyExact(state.buyAmount+earn)} total</span></div>`;
+          }).join('')}
+          <p class="muted" style="margin-top:8px;">Illustrative only, based on the fund's blended ${(RATES.blended*100).toFixed(1)}% p.a. target return (70% Fixed Income / 30% Equities). Not guaranteed.</p>
+        </div>
         <p class="muted" style="text-align:center;">Debited from BPI Savings •••• 4821</p>
-        <p class="muted" style="text-align:center; margin-top:6px;">🔒 This ${money(state.buyAmount)} contribution unlocks 90 days from today — earlier contributions may already be free to withdraw.</p>
+        <p class="muted" style="text-align:center; margin-top:6px;">🕒 Funds settle T+2 (by ${settleDate}) before they start earning.</p>
+        <p class="muted" style="text-align:center; margin-top:6px;">🔒 This ${money(state.buyAmount)} contribution unlocks fee-free 90 days from today — earlier contributions may already be past their own 90 days.</p>
       </div>
-      <div style="padding:14px 20px 14px;"><button class="btn" id="confirmBuyBtn" ${state.buyAmount<=0?'disabled style="opacity:.5; cursor:not-allowed;"':''}>Confirm ${money(state.buyAmount)} / month</button></div>
+      <div style="padding:14px 20px 14px;"><button class="btn" id="confirmBuyBtn" ${state.buyAmount<=0?'disabled style="opacity:.5; cursor:not-allowed;"':''}>${btnLabel}</button></div>
       ${tabbarHtml('monitor')}
-    `},
+    `;}},
 
   { id:'monitor', label:'Monitor Holdings',
-    render: () => `
+    render: () => {
+      const total = totalRemaining();
+      const fixedValue = total * 0.7;
+      const equitiesValue = total * 0.3;
+      return `
       <div class="appbar"><div class="icon-btn" data-goto="dashboard">←</div><div class="brand-name">Your Portfolio</div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
-        <div class="card"><div class="eyebrow">Total Value</div><div class="h2" style="font-size:26px;">₱3,820.50</div><div class="gain" style="color:var(--green); font-size:12px; font-weight:800;">▲ ₱154.20 (4.2%) · 1 Year View</div></div>
+        <div class="card"><div class="eyebrow">Total Value</div><div class="h2" style="font-size:26px;">${moneyExact(total)}</div><div class="gain" style="color:var(--green); font-size:12px; font-weight:800;">▲ ₱154.20 (4.2%) · 1 Year View</div></div>
+        <div class="card">
+          <div class="eyebrow">Asset Allocation</div>
+          <div class="alloc-bar"><div class="alloc-fill fixed" style="width:70%;"></div><div class="alloc-fill equities" style="width:30%;"></div></div>
+          <div class="alloc-legend">
+            <span><i class="dot fixed"></i>Fixed Income · 70%</span>
+            <span><i class="dot equities"></i>Equities · 30%</span>
+          </div>
+        </div>
         <div class="switch-row"><span style="font-size:12.5px; font-weight:800;">Advanced view</span><div class="switch on"></div></div>
-        <div class="card"><div class="eyebrow">Top Holdings</div>
-          <div class="holding-row"><div><div class="holding-name">SM Investments</div><div class="holding-sub">PH · Conglomerate</div></div><div><div class="holding-val">₱612.10</div><div class="holding-gain">▲ 3.1%</div></div></div>
-          <div class="holding-row"><div><div class="holding-name">Jollibee Foods</div><div class="holding-sub">PH · Food Service</div></div><div><div class="holding-val">₱498.40</div><div class="holding-gain">▲ 2.4%</div></div></div>
-          <div class="holding-row"><div><div class="holding-name">7-Eleven (PH)</div><div class="holding-sub">PH · Retail</div></div><div><div class="holding-val">₱455.00</div><div class="holding-gain">▲ 5.8%</div></div></div>
-          <div class="holding-row"><div><div class="holding-name">Coca-Cola</div><div class="holding-sub">Global · Beverage</div></div><div><div class="holding-val">₱402.80</div><div class="holding-gain">▲ 1.7%</div></div></div>
-          <div class="holding-row"><div><div class="holding-name">Nike</div><div class="holding-sub">Global · Apparel/Lifestyle</div></div><div><div class="holding-val">₱366.20</div><div class="holding-gain">▲ 2.0%</div></div></div>
-          <div class="holding-row"><div><div class="holding-name">Visa</div><div class="holding-sub">Global · Payments/Fintech</div></div><div><div class="holding-val">₱310.90</div><div class="holding-gain">▲ 1.3%</div></div></div>
+        <div class="card"><div class="eyebrow">Fixed Income (${moneyExact(fixedValue)} · 70%)</div>
+          <div class="holding-row"><div><div class="holding-name">91-Day Treasury Bill</div><div class="holding-sub">PH · T-Bill</div></div><div><div class="holding-val">${moneyExact(fixedValue*0.34)}</div><div class="holding-gain">▲ 0.9%</div></div></div>
+          <div class="holding-row"><div><div class="holding-name">2-Yr Treasury Bond</div><div class="holding-sub">PH · Treasury Bond</div></div><div><div class="holding-val">${moneyExact(fixedValue*0.34)}</div><div class="holding-gain">▲ 1.1%</div></div></div>
+          <div class="holding-row"><div><div class="holding-name">5-Yr Treasury Bond</div><div class="holding-sub">PH · Treasury Bond</div></div><div><div class="holding-val">${moneyExact(fixedValue*0.32)}</div><div class="holding-gain">▲ 1.4%</div></div></div>
+        </div>
+        <div class="card"><div class="eyebrow">Equities (${moneyExact(equitiesValue)} · 30%)</div>
+          <div class="holding-row"><div><div class="holding-name">SM Investments</div><div class="holding-sub">PH · Conglomerate</div></div><div><div class="holding-val">${moneyExact(equitiesValue*0.37)}</div><div class="holding-gain">▲ 3.1%</div></div></div>
+          <div class="holding-row"><div><div class="holding-name">Jollibee Foods</div><div class="holding-sub">PH · Food Service</div></div><div><div class="holding-val">${moneyExact(equitiesValue*0.33)}</div><div class="holding-gain">▲ 2.4%</div></div></div>
+          <div class="holding-row"><div><div class="holding-name">7-Eleven (PH)</div><div class="holding-sub">PH · Retail</div></div><div><div class="holding-val">${moneyExact(equitiesValue*0.30)}</div><div class="holding-gain">▲ 5.8%</div></div></div>
         </div>
         <div style="display:flex; gap:10px;">
           <button class="btn" style="flex:1;" data-goto="buy">Add Funds</button>
           <button class="btn secondary" style="flex:1;" data-goto="redeem">Redeem</button>
         </div>
+        <button class="btn ghost" style="margin-top:10px;" data-goto="history">View Transaction History</button>
       </div>
       ${tabbarHtml('monitor')}
-    `},
+    `;}},
 
   { id:'redeem', label:'Redeem',
     render: () => {
-      const { available, lockedTotal, soonest, soonestDaysLeft } = contributionsSummary();
+      const total = totalRemaining();
+      const { lockedTotal, soonest, soonestDaysLeft } = lockedBreakdown();
+      const amount = state.redeemMode === 'full' ? total : state.redeemAmount;
+      const result = computeRedemption(amount);
+      const settleDate = formatDate(addBusinessDays(TODAY, 2));
       return `
       <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Redeem Funds</div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
-        <div class="note" style="background:#FBEAEA; border-color:#EFC2C2; color:var(--red-dark);">🔒 Each contribution unlocks 90 days after its own investment date — your portfolio doesn't lock or unlock all at once.</div>
-        <div class="card"><div class="eyebrow">Available to withdraw</div><div class="h2" style="font-size:24px; color:var(--green);">${moneyExact(available)}</div><p class="muted" style="margin-top:6px;">From contributions already past their 90-day lock.</p></div>
-        <div class="card"><div class="eyebrow">Locked (still in 90-day period)</div><div class="h2" style="font-size:20px; opacity:.55;">${moneyExact(lockedTotal)}</div><p class="muted" style="margin-top:6px;">${soonest ? `Next ${moneyExact(soonest.amount)} unlocks in ${soonestDaysLeft} days` : 'Nothing currently locked.'}</p></div>
-        <div class="toggle-row"><div class="t on">Partial</div><div class="t">Full redemption</div></div>
-        <div class="amount-display" style="padding:14px 0;"><div class="cur">PHP</div><div class="num">${Number(available).toLocaleString('en-PH')}</div></div>
-        <p class="muted" style="text-align:center;">Proceeds sent to BPI Savings •••• 4821 · standard settlement timeline applies</p>
-        <p class="muted" style="text-align:center; margin-top:8px;">1.00% annual management fee applies. No early redemption fee — each contribution simply unlocks 90 days after its own date.</p>
+        <div class="note" style="background:#FBEAEA; border-color:#EFC2C2; color:var(--red-dark);">🔒 Each contribution unlocks fee-free 90 days after its own investment date. You can redeem anytime — a 1% early redemption fee applies only to the portion still within its own 90 days.</div>
+        <div class="card"><div class="eyebrow">Available to withdraw</div><div class="h2" style="font-size:24px;">${moneyExact(total)}</div><p class="muted" style="margin-top:6px;">${lockedTotal>0 ? `${moneyExact(lockedTotal)} of this is still within its 90-day window${soonest?` · next portion turns fee-free in ${soonestDaysLeft} day${soonestDaysLeft===1?'':'s'}`:''}.` : 'All contributions are past their 90-day window — no fee applies.'}</p></div>
+
+        <div class="toggle-row" id="redeemModeRow">
+          <div class="t ${state.redeemMode==='partial'?'on':''}" data-mode="partial">Partial</div>
+          <div class="t ${state.redeemMode==='full'?'on':''}" data-mode="full">Full redemption</div>
+        </div>
+
+        ${state.redeemMode==='partial' ? `
+        <div class="amount-display" style="padding:14px 0;"><div class="cur">PHP</div><div class="num" id="redeemAmountNum">${Number(state.redeemAmount).toLocaleString('en-PH')}</div></div>
+        <div class="keypad">
+          <div class="key" data-rkey="1">1</div><div class="key" data-rkey="2">2</div><div class="key" data-rkey="3">3</div>
+          <div class="key" data-rkey="4">4</div><div class="key" data-rkey="5">5</div><div class="key" data-rkey="6">6</div>
+          <div class="key" data-rkey="7">7</div><div class="key" data-rkey="8">8</div><div class="key" data-rkey="9">9</div>
+          <div class="key" style="opacity:.4; cursor:default;">₱</div><div class="key" data-rkey="0">0</div><div class="key" data-rkey="back">⌫</div>
+        </div>
+        ` : `<div class="amount-display" style="padding:14px 0;"><div class="cur">PHP</div><div class="num">${Number(total).toLocaleString('en-PH')}</div></div>`}
+
+        <div class="card">
+          <div class="eyebrow">Breakdown</div>
+          <div class="fee-row"><span>Gross amount</span><span>${moneyExact(result.gross)}</span></div>
+          <div class="fee-row"><span>Early redemption fee (1%)</span><span>${result.fee>0?'−'+moneyExact(result.fee):'₱0.00'}</span></div>
+          <div class="fee-row total"><span>Net proceeds</span><span>${moneyExact(result.net)}</span></div>
+        </div>
+        <p class="muted" style="text-align:center;">Proceeds sent to BPI Savings •••• 4821</p>
+        <p class="muted" style="text-align:center; margin-top:6px;">🕒 Net proceeds settle T+2 (by ${settleDate}).</p>
       </div>
-      <div style="padding:14px 20px 14px;"><button class="btn" data-goto="monitor">Redeem ${moneyExact(available)}</button><button class="btn ghost" style="margin-top:10px;">Vote to End Barkada Goal</button></div>
+      <div style="padding:14px 20px 14px;"><button class="btn" id="confirmRedeemBtn" ${result.gross<=0?'disabled style="opacity:.5; cursor:not-allowed;"':''}>Redeem ${moneyExact(result.net)}</button><button class="btn ghost" style="margin-top:10px;">Vote to End Barkada Goal</button></div>
+      ${tabbarHtml('monitor')}
+    `;}},
+
+  { id:'history', label:'Transaction History',
+    render: () => {
+      const txnRows = state.transactions.map(t => ({ ...t, kind:'txn' }));
+      const accrualRows = dailyAccrualRows(7).map(r => ({ ...r, kind:'accrual' }));
+      const all = [...txnRows, ...accrualRows].sort((a,b)=> b.date - a.date);
+      return `
+      <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Transaction History</div><div class="icon-btn hamburger-btn">☰</div></div>
+      <div class="content">
+        <div class="note">💡 Daily interest accrual below is an illustrative estimate on your current settled balance at the blended ${(RATES.blended*100).toFixed(1)}% p.a. rate — actual NAVPS movement may vary day to day.</div>
+        <div class="card">
+          ${all.map(row => row.kind==='txn' ? txnRowHtml(row) : accrualRowHtml(row)).join('')}
+        </div>
+        <p class="muted" style="text-align:center; margin-top:4px;">Showing the last 7 days of interest accrual alongside your full transaction history.</p>
+      </div>
       ${tabbarHtml('monitor')}
     `;}},
 ];
@@ -242,6 +434,7 @@ const SIDEBAR_ITEMS = [
   { id:'monitor',   icon:'💰', label:'Portfolio' },
   { id:'buy',       icon:'➕', label:'Add Funds' },
   { id:'redeem',    icon:'🔄', label:'Redeem' },
+  { id:'history',   icon:'🧾', label:'Transaction History' },
 ];
 
 function inviteCode(){
@@ -336,6 +529,12 @@ function wireScreenInteractions(){
   }
 
   if (id === 'buy'){
+    document.querySelectorAll('#buyModeRow .t').forEach(el=>{
+      el.onclick = ()=>{ state.buyMode = el.dataset.mode; renderScreen(); };
+    });
+    document.querySelectorAll('#freqRow .freq-chip').forEach(el=>{
+      el.onclick = ()=>{ state.autoFrequency = el.dataset.freq; renderScreen(); };
+    });
     document.querySelectorAll('.key[data-key]').forEach(key=>{
       key.onclick = ()=>{
         const k = key.dataset.key;
@@ -350,11 +549,45 @@ function wireScreenInteractions(){
     });
     document.getElementById('confirmBuyBtn').onclick = ()=>{
       if (state.buyAmount <= 0) return;
+      const now = new Date(TODAY);
       state.currentAmount += state.buyAmount;
-      state.contributions.push({ amount: state.buyAmount, daysAgo: 0 });
+      state.contributions.push({ id: ++lotId, amount: state.buyAmount, remaining: state.buyAmount, date: now, member:'You' });
+      state.transactions.unshift(makeTxn('contribution', state.buyAmount, 0, now, 'You'));
       state.activity.unshift({ name:'You', type:'contribution', amount: state.buyAmount, time:'Just now' });
       state.buyAmount = 500;
       goToScreen('dashboard');
+    };
+  }
+
+  if (id === 'redeem'){
+    document.querySelectorAll('#redeemModeRow .t').forEach(el=>{
+      el.onclick = ()=>{
+        state.redeemMode = el.dataset.mode;
+        if (state.redeemMode === 'partial' && state.redeemAmount === 0) state.redeemAmount = Math.min(500, totalRemaining());
+        renderScreen();
+      };
+    });
+    document.querySelectorAll('.key[data-rkey]').forEach(key=>{
+      key.onclick = ()=>{
+        const k = key.dataset.rkey;
+        if (k === 'back'){
+          state.redeemAmount = Math.floor(state.redeemAmount / 10);
+        } else {
+          const next = state.redeemAmount * 10 + Number(k);
+          if (next <= totalRemaining()) state.redeemAmount = next;
+        }
+        renderScreen();
+      };
+    });
+    const confirmBtn = document.getElementById('confirmRedeemBtn');
+    if (confirmBtn) confirmBtn.onclick = ()=>{
+      const amount = state.redeemMode === 'full' ? totalRemaining() : state.redeemAmount;
+      if (amount <= 0) return;
+      const result = applyRedemption(amount);
+      state.activity.unshift({ name:'You', type:'redemption', amount: result.net, time:'Just now' });
+      state.redeemAmount = 0;
+      state.redeemMode = 'full';
+      goToScreen('monitor');
     };
   }
 }
@@ -373,7 +606,7 @@ function updatePreview(){
   if (!box) return;
   const tf = TIMEFRAMES[state.timeframe];
   box.querySelector('.gp-name').textContent = '🎯 ' + (state.goalName || 'Untitled Goal');
-  box.querySelector('.gp-amt').textContent = `${money(state.targetAmount)} target · ${tf.label} pathway (${tf.equities}% equities)`;
+  box.querySelector('.gp-amt').textContent = `${money(state.targetAmount)} target · ${tf.label} pathway (${tf.fixed}% Fixed Income / ${tf.equities}% Equities)`;
 }
 
 document.getElementById('sidebarBackdrop').onclick = closeSidebar;

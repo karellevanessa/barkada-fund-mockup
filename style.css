@@ -148,3 +148,31 @@ body{ background:#EDE7DE; font-family:'Manrope','Segoe UI',system-ui,sans-serif;
 .sidebar-item .si-icon{ font-size:16px; width:20px; text-align:center; }
 .sidebar-item:hover{ background:var(--cream); }
 .sidebar-item.active{ background:#FDF1F1; color:var(--red); }
+
+.alloc-bar{ display:flex; height:10px; border-radius:8px; overflow:hidden; background:var(--hair); margin:6px 0 10px; }
+.alloc-fill.fixed{ background:var(--red); }
+.alloc-fill.equities{ background:var(--gold); }
+.alloc-legend{ display:flex; justify-content:space-between; font-size:10.5px; font-weight:700; color:var(--ink-soft); }
+.alloc-legend .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+.alloc-legend .dot.fixed{ background:var(--red); }
+.alloc-legend .dot.equities{ background:var(--gold); }
+
+.freq-row{ display:flex; gap:8px; margin-bottom:14px; }
+.freq-chip{ flex:1; text-align:center; padding:10px 4px; border-radius:12px; font-size:11.5px; font-weight:800; border:1.5px solid var(--hair); color:var(--ink-soft); cursor:pointer; }
+.freq-chip.sel{ border-color:var(--red); color:var(--red); background:#FDF1F1; }
+
+.projection-row{ display:flex; justify-content:space-between; align-items:baseline; padding:8px 0; border-top:1px solid var(--hair); font-size:12.5px; font-weight:800; }
+.projection-row:first-of-type{ border-top:none; }
+.projection-row .muted{ font-size:10.5px; font-weight:700; }
+
+.fee-row{ display:flex; justify-content:space-between; padding:6px 0; font-size:12.5px; font-weight:700; color:var(--ink-soft); }
+.fee-row.total{ border-top:1px solid var(--hair); margin-top:4px; padding-top:10px; font-size:14px; font-weight:800; color:var(--ink); }
+
+.status-pill{ display:inline-block; font-size:9.5px; font-weight:800; padding:2px 8px; border-radius:999px; margin-top:3px; }
+.status-pill.pending{ background:#FDF6E8; color:#8A6A1E; }
+.status-pill.settled{ background:var(--green-bg); color:var(--green); }
+
+.txn-row .activity-text{ line-height:1.6; }
+.accrual-row{ display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-top:1px solid var(--hair); font-size:11.5px; font-weight:700; color:var(--ink-soft); }
+.accrual-row:first-of-type{ border-top:none; }
+.accrual-row .accrual-date{ font-size:10.5px; font-weight:700; color:var(--ink-soft); }
