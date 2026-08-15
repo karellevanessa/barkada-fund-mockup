@@ -195,7 +195,7 @@ function tabbarHtml(active){
     { id:'monitor',   icon:'💰', label:'Invest' },
     { id:'profile',   icon:'👤', label:'Profile' },
   ];
-  return `<div class="tabbar">${tabs.map(t=>`<div class="tab ${t.id===active?'active':''}" ${t.id!=='profile'?`data-goto="${t.id}"`:''}>${t.icon}<br>${t.label}</div>`).join('')}</div>`;
+  return `<div class="tabbar">${tabs.map(t=>`<div class="tab ${t.id===active?'active':''}" data-goto="${t.id}">${t.icon}<br>${t.label}</div>`).join('')}</div>`;
 }
 
 function txnRowHtml(t){
@@ -611,6 +611,62 @@ const screens = [
       </div>
       ${tabbarHtml('monitor')}
     `;}},
+
+  { id:'profile', label:'Profile',
+    render: () => `
+      <div class="appbar"><div class="brand"><div class="logo">BF</div><div class="brand-name">BPI Barkada <span>FUNd</span></div></div><div class="icon-btn hamburger-btn">☰</div></div>
+      <div class="content">
+        <div class="eyebrow">Profile</div>
+        <div class="card" style="display:flex; align-items:center; gap:12px;">
+          <div class="member-av" style="background:${colorFor(youName())}; width:44px; height:44px; font-size:16px;">${initials(youName())}</div>
+          <div>
+            <div class="h2" style="font-size:15px; margin-bottom:2px;">${escapeHtml(youName())}</div>
+            <div class="muted">${INVESTOR_PROFILES[state.investorType].investorType}</div>
+          </div>
+        </div>
+
+        <div class="field-label">Switch Account</div>
+        <div class="card">
+          <div class="account-row active">
+            <span class="account-icon">🎯</span>
+            <div class="account-text">
+              <div class="account-name">BPI Barkada FUNd</div>
+              <div class="account-sub">Group goal · ${escapeHtml(state.goalName || 'Untitled Goal')}</div>
+            </div>
+            <span class="account-check">✓</span>
+          </div>
+          <div class="account-row" data-goto="wallet">
+            <span class="account-icon">🏦</span>
+            <div class="account-text">
+              <div class="account-name">BPI Main Wallet</div>
+              <div class="account-sub">Your everyday BPI accounts</div>
+            </div>
+            <span class="account-arrow">›</span>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:8px;">Switching takes you to your main BPI Wallet — your barkada goal stays right where you left it.</p>
+      </div>
+      ${tabbarHtml('profile')}
+    `},
+
+  { id:'wallet', label:'BPI Main Wallet',
+    render: () => `
+      <div class="appbar"><div class="icon-btn" data-goto="profile">←</div><div class="brand-name">BPI Main Wallet</div><div class="icon-btn hamburger-btn">☰</div></div>
+      <div class="content">
+        <div class="card">
+          <div class="eyebrow">Total Balance</div>
+          <div class="h2" style="font-size:26px;">₱42,318.90</div>
+          <p class="muted" style="margin-top:6px;">Across your BPI Savings and other accounts.</p>
+        </div>
+        <div class="card">
+          <div class="eyebrow">Your Accounts</div>
+          <div class="holding-row"><div><div class="holding-name">BPI Savings</div><div class="holding-sub">•••• 4821</div></div><div><div class="holding-val">₱38,204.40</div></div></div>
+          <div class="holding-row"><div><div class="holding-name">BPI Barkada FUNd</div><div class="holding-sub">Group investment</div></div><div><div class="holding-val">${moneyExact(totalRemaining())}</div></div></div>
+        </div>
+        <p class="muted" style="text-align:center;">This is a placeholder for BPI's main app — everything outside Barkada FUNd lives here.</p>
+      </div>
+      <div style="padding:14px 20px 14px;"><button class="btn" data-goto="profile">Switch back to Barkada FUNd</button></div>
+    `},
 ];
 
 const SIDEBAR_ITEMS = [
@@ -623,6 +679,8 @@ const SIDEBAR_ITEMS = [
   { id:'buy',       icon:'➕', label:'Add Funds' },
   { id:'redeem',    icon:'🔄', label:'Redeem' },
   { id:'history',   icon:'🧾', label:'Transaction History' },
+  { id:'profile',   icon:'👤', label:'Profile' },
+  { id:'wallet',    icon:'🏦', label:'BPI Main Wallet' },
 ];
 
 function inviteCode(){

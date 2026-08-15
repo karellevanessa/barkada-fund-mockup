@@ -100,6 +100,16 @@ body{ background:#EDE7DE; font-family:'Manrope','Segoe UI',system-ui,sans-serif;
 .holding-val{ text-align:right; font-weight:800; }
 .holding-gain{ color:var(--green); font-size:10.5px; font-weight:700;}
 
+.account-row{ display:flex; align-items:center; gap:12px; padding:12px 0; border-top:1px solid var(--hair); cursor:pointer; }
+.account-row:first-of-type{ border-top:none; }
+.account-row.active{ cursor:default; }
+.account-icon{ font-size:18px; flex-shrink:0; }
+.account-text{ flex:1; }
+.account-name{ font-size:13px; font-weight:800; }
+.account-sub{ font-size:10.5px; color:var(--ink-soft); font-weight:700; margin-top:1px; }
+.account-check{ color:var(--red); font-weight:800; }
+.account-arrow{ color:var(--ink-soft); font-size:18px; font-weight:800; }
+
 .note{ background:#FDF6E8; border:1px solid #F0DFB0; border-radius:12px; padding:12px 14px; font-size:11.5px; color:#8A6A1E; font-weight:700; line-height:1.5; margin-bottom:14px; }
 .icon-btn{ width:32px; height:32px; border-radius:10px; background:var(--paper); border:1px solid var(--hair); display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; }
 
