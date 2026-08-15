@@ -42,6 +42,7 @@ const state = {
   investorType: 'moderate', // 'conservative' | 'moderate' | 'aggressive' — set for real once the onboarding quiz is completed
   quizAnswers: {}, // { q1: score, q2: score, q3: score }
   quizStep: 0, // which onboarding page is showing: 0..QUIZ_QUESTIONS.length-1 are questions, QUIZ_QUESTIONS.length is the reveal page
+  activeFundId: 'current', // which barkada fund is loaded into goalName/targetAmount/currentAmount/members below
   goalName: '',
   targetAmount: '',
   currentAmount: 18400,
@@ -260,6 +261,24 @@ function updateJoinSummary(){
   btn.disabled = !codeEntered;
   btn.style.opacity = codeEntered ? '' : '.5';
   btn.style.cursor = codeEntered ? '' : 'not-allowed';
+}
+
+/* ---------- other barkada funds (demo data — a member can belong to more than one) ----------
+   `otherFunds` holds every fund that ISN'T the one currently loaded into `state`. Switching pulls
+   the target fund's data into `state` and pushes a snapshot of the fund being left back into this
+   list, so switching back and forth never loses or duplicates a fund. */
+let otherFunds = [
+  { id:'baguio', goalName:'Baguio Getaway', targetAmount:15000, currentAmount:6200,
+    members:[{ name:'Karelle', you:true }, { name:'Miguel' }, { name:'Trisha' }] },
+  { id:'emergency', goalName:'Barkada Emergency Fund', targetAmount:50000, currentAmount:31500,
+    members:[{ name:'Karelle', you:true }, { name:'Aly' }, { name:'Miguel' }, { name:'Hazel' }, { name:'Trisha' }] },
+];
+let pendingFundSwitch = null;
+function allBarkadaFunds(){
+  return [
+    { id: state.activeFundId, goalName: state.goalName || 'Untitled Goal', targetAmount: state.targetAmount, currentAmount: state.currentAmount, members: state.members, current:true },
+    ...otherFunds.map(f=>({ ...f, current:false })),
+  ];
 }
 
 /* ---------- screens ---------- */
@@ -648,6 +667,29 @@ const screens = [
           </div>
         </div>
         <p class="muted" style="margin-top:8px;">Switching takes you to your main BPI Wallet — your barkada goal stays right where you left it.</p>
+
+        <div class="field-label">Your Barkada Funds (${allBarkadaFunds().length})</div>
+        <div class="card">
+          ${allBarkadaFunds().map(f=>`
+            <div class="account-row ${f.current?'active':''}" ${f.current?'':`data-switch-fund="${f.id}"`}>
+              <span class="account-icon">🎯</span>
+              <div class="account-text">
+                <div class="account-name">${escapeHtml(f.goalName)}</div>
+                <div class="account-sub">${money(f.currentAmount)} of ${money(f.targetAmount)} · ${f.members.length} members</div>
+              </div>
+              ${f.current ? '<span class="account-check">✓</span>' : '<span class="account-arrow">›</span>'}
+            </div>
+          `).join('')}
+        </div>
+        <p class="muted" style="margin-top:8px;">You can be part of more than one barkada fund — tap another one to switch to its dashboard.</p>
+      </div>
+      <div class="confirm-backdrop" id="switchFundBackdrop">
+        <div class="confirm-card">
+          <div class="h2">Switch Barkada Fund?</div>
+          <p class="muted" id="switchFundText"></p>
+          <button class="btn" id="switchFundYesBtn">Yes, switch</button>
+          <button class="btn ghost" id="switchFundCancelBtn" style="margin-top:10px;">Cancel</button>
+        </div>
       </div>
       ${tabbarHtml('profile')}
     `},
@@ -752,6 +794,39 @@ function wireScreenInteractions(){
       state.userRole = 'joiner';
       state.quizStep = 0;
       goToScreen('onboard');
+    };
+  }
+
+  if (id === 'profile'){
+    const backdrop = document.getElementById('switchFundBackdrop');
+    document.querySelectorAll('[data-switch-fund]').forEach(row=>{
+      row.onclick = ()=>{
+        pendingFundSwitch = otherFunds.find(f=>f.id===row.dataset.switchFund);
+        if (!pendingFundSwitch) return;
+        document.getElementById('switchFundText').textContent = `You'll leave "${state.goalName || 'Untitled Goal'}" and see "${pendingFundSwitch.goalName}"'s dashboard instead.`;
+        backdrop.classList.add('open');
+      };
+    });
+    document.getElementById('switchFundCancelBtn').onclick = ()=>{
+      pendingFundSwitch = null;
+      backdrop.classList.remove('open');
+    };
+    document.getElementById('switchFundYesBtn').onclick = ()=>{
+      if (!pendingFundSwitch) return;
+      const leaving = { id: state.activeFundId, goalName: state.goalName || 'Untitled Goal', targetAmount: state.targetAmount, currentAmount: state.currentAmount, members: state.members };
+      otherFunds = otherFunds.filter(f=>f.id !== pendingFundSwitch.id);
+      otherFunds.push(leaving);
+      state.activeFundId = pendingFundSwitch.id;
+      state.goalName = pendingFundSwitch.goalName;
+      state.targetAmount = pendingFundSwitch.targetAmount;
+      state.currentAmount = pendingFundSwitch.currentAmount;
+      state.members = pendingFundSwitch.members;
+      pendingFundSwitch = null;
+      backdrop.classList.remove('open');
+      goToScreen('dashboard');
+    };
+    backdrop.onclick = (e)=>{
+      if (e.target.id === 'switchFundBackdrop'){ pendingFundSwitch = null; backdrop.classList.remove('open'); }
     };
   }
 
