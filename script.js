@@ -498,7 +498,7 @@ const screens = [
             const earn = projectedEarnings(state.buyAmount, d);
             return `<div class="projection-row"><span>${d} days</span><span>+${moneyExact(earn)}</span><span class="muted">${moneyExact(state.buyAmount+earn)} total</span></div>`;
           }).join('')}
-          <p class="muted" style="margin-top:8px;">Illustrative only, based on the fund's blended ${(RATES.blended*100).toFixed(1)}% p.a. target return (70% Fixed Income / 30% Equities). Not guaranteed.</p>
+          <p class="muted" style="margin-top:8px;">Illustrative only. The ${(RATES.blended*100).toFixed(1)}% p.a. blended rate (70% Fixed Income / 30% Equities) is an assumption based on current market conditions — it's not final and can change. Not guaranteed.</p>
         </div>
         <p class="muted" style="text-align:center;">Debited from BPI Savings •••• 4821</p>
         <p class="muted" style="text-align:center; margin-top:6px;">🕒 Funds settle T+2 (by ${settleDate}) before they start earning.</p>
@@ -603,7 +603,7 @@ const screens = [
       return `
       <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Transaction History</div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
-        <div class="note">💡 Daily interest accrual below is an illustrative estimate on your current settled balance at the blended ${(RATES.blended*100).toFixed(1)}% p.a. rate — actual returns may vary day to day.</div>
+        <div class="note">💡 Daily interest accrual below is an illustrative estimate on your current settled balance at an assumed ${(RATES.blended*100).toFixed(1)}% p.a. blended rate — this rate isn't final and actual returns may vary day to day.</div>
         <div class="card">
           ${all.map(row => row.kind==='txn' ? txnRowHtml(row) : accrualRowHtml(row)).join('')}
         </div>
