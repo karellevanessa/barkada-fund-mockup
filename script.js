@@ -990,3 +990,12 @@ function notifyDailyInterest(){
 setTimeout(()=>{ notifyDailyInterest(); setInterval(notifyDailyInterest, 60*1000); }, 5000);
 setTimeout(()=>{ notifySomeoneInvested(); setInterval(notifySomeoneInvested, 2*60*1000); }, 10000);
 setTimeout(()=>{ notifyMonthlyReminder(); setInterval(notifyMonthlyReminder, 3*60*1000); }, 15000);
+
+/* ---------- live status bar clock ---------- */
+function updateStatusClock(){
+  const el = document.getElementById('statusClock');
+  if (!el) return;
+  el.textContent = new Date().toLocaleTimeString('en-PH', { hour:'numeric', minute:'2-digit', hour12:true }).replace(/\s?[AP]M$/i, '');
+}
+updateStatusClock();
+setInterval(updateStatusClock, 1000);
