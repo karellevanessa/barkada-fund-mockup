@@ -33,6 +33,9 @@ function makeTxn(type, amount, fee, date, member){
   return { id: ++txnId, type, amount, fee, date, settleDate: addBusinessDays(date, 2), member };
 }
 
+// Single source of truth for the minimum contribution — referenced everywhere it's shown or enforced.
+const MIN_CONTRIBUTION = 50;
+
 /* ---------- app state (drives the interactive screens) ---------- */
 const state = {
   userRole: null, // 'creator' | 'joiner'
@@ -55,7 +58,7 @@ const state = {
     makeLot(1000.00, 42, 'Karelle'), // your first-ever contribution — the lock clock starts here, 48 days left
     makeLot(2820.50, 10, 'Karelle'), // a later top-up — doesn't get its own clock or restart the lock
   ],
-  buyAmount: 500, // amount currently entered on the Add Funds screen
+  buyAmount: MIN_CONTRIBUTION, // amount currently entered on the Add Funds screen
   buyMode: 'onetime', // 'onetime' | 'auto'
   autoFrequency: 'monthly', // 'daily' | 'biweekly' | 'monthly'
   redeemAmount: 0, // amount currently entered on the Redeem screen (partial mode)
@@ -355,7 +358,7 @@ const screens = [
           <div class="gp-name">🎯 ${escapeHtml(state.goalName || 'Untitled Goal')}</div>
           <div class="gp-amt">${money(state.targetAmount)} target · ${FUND.label} · ${FUND.fixed}% Fixed Income / ${FUND.equities}% Equities</div>
         </div>
-        <p class="muted" style="text-align:center;">₱50 minimum per member</p>
+        <p class="muted" style="text-align:center;">${money(MIN_CONTRIBUTION)} minimum per member</p>
       </div>
       <div style="padding:14px 20px 14px;"><button class="btn" data-goto="members">Save Goal</button></div>
       ${tabbarHtml('members')}
@@ -475,7 +478,7 @@ const screens = [
       return `
       <div class="appbar"><div class="icon-btn" data-goto="monitor">←</div><div class="brand-name">Add Funds</div><div class="icon-btn hamburger-btn">☰</div></div>
       <div class="content">
-        <div class="amount-display"><div class="cur">PHP</div><div class="num" id="buyAmountNum">${state.buyAmount.toLocaleString('en-PH')}</div><p class="muted">Contributing to <b>${escapeHtml(state.goalName || 'your goal')}</b></p></div>
+        <div class="amount-display"><div class="cur">PHP</div><div class="num" id="buyAmountNum">${state.buyAmount.toLocaleString('en-PH')}</div><p class="muted">Contributing to <b>${escapeHtml(state.goalName || 'your goal')}</b></p>${state.buyAmount < MIN_CONTRIBUTION ? `<p class="muted" style="color:var(--red); margin-top:4px;">Minimum ${money(MIN_CONTRIBUTION)} per contribution</p>` : ''}</div>
         <div class="toggle-row" id="buyModeRow">
           <div class="t ${state.buyMode==='onetime'?'on':''}" data-mode="onetime">One-time</div>
           <div class="t ${state.buyMode==='auto'?'on':''}" data-mode="auto">Auto-debit</div>
@@ -504,7 +507,7 @@ const screens = [
         <p class="muted" style="text-align:center; margin-top:6px;">🕒 Funds settle T+2 (by ${settleDate}) before they start earning.</p>
         <p class="muted" style="text-align:center; margin-top:6px;">🔒 Your account's 90-day lock is set by your first-ever contribution — adding funds now doesn't restart or extend it.</p>
       </div>
-      <div style="padding:14px 20px 14px;"><button class="btn" id="confirmBuyBtn" ${state.buyAmount<=0?'disabled style="opacity:.5; cursor:not-allowed;"':''}>${btnLabel}</button></div>
+      <div style="padding:14px 20px 14px;"><button class="btn" id="confirmBuyBtn" ${state.buyAmount<MIN_CONTRIBUTION?'disabled style="opacity:.5; cursor:not-allowed;"':''}>${btnLabel}</button></div>
       ${tabbarHtml('monitor')}
     `;}},
 
@@ -860,13 +863,13 @@ function wireScreenInteractions(){
       };
     });
     document.getElementById('confirmBuyBtn').onclick = ()=>{
-      if (state.buyAmount <= 0) return;
+      if (state.buyAmount < MIN_CONTRIBUTION) return;
       const now = new Date(TODAY);
       state.currentAmount += state.buyAmount;
       state.contributions.push({ id: ++lotId, amount: state.buyAmount, remaining: state.buyAmount, date: now, member: youName() });
       state.transactions.unshift(makeTxn('contribution', state.buyAmount, 0, now, youName()));
       state.activity.unshift({ name: youName(), type:'contribution', amount: state.buyAmount, time:'Just now' });
-      state.buyAmount = 500;
+      state.buyAmount = MIN_CONTRIBUTION;
       goToScreen('dashboard');
     };
   }
