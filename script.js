@@ -16,7 +16,7 @@ function daysBetween(a, b){ return Math.floor((b - a) / 86400000); }
 function formatDate(d){ return d.toLocaleDateString('en-PH', { month:'short', day:'numeric' }); }
 function isSettled(date){ return TODAY >= addBusinessDays(date, 2); }
 
-// 70% Fixed Income (T-Bills & Treasury Bonds) / 30% Equities — illustrative target rates, not guaranteed
+// 70% Fixed Income (T-Bills) / 30% Equities — illustrative target rates, not guaranteed
 const RATES = { fixed: 0.06, equities: 0.08 };
 RATES.blended = 0.7 * RATES.fixed + 0.3 * RATES.equities;
 const DAILY_RATE = Math.pow(1 + RATES.blended, 1/365) - 1;
@@ -344,7 +344,7 @@ const screens = [
           <div class="quiz-icon">🎉</div>
           <div class="eyebrow" style="text-align:center;">About BPI Barkada FUND</div>
           <div class="card">
-            <p class="muted">BPI Barkada FUND is a group investment product for young, first-time Filipino investors — you and your barkada (3+ friends) pool your contributions into one shared fund and track progress toward a goal together. The fund itself is short-term by design (at least 1 year) and fixed at 70% Fixed Income (T-Bills &amp; Treasury Bonds) / 30% Equities for everyone — it's built for near-term goals like a trip or a big purchase, not long-term retirement-style investing.</p>
+            <p class="muted">BPI Barkada FUND is a group investment product for young, first-time Filipino investors — you and your barkada (3+ friends) pool your contributions into one shared fund and track progress toward a goal together. The fund itself is short-term by design (at least 1 year) and fixed at 70% Fixed Income (T-Bills) / 30% Equities for everyone — it's built for near-term goals like a trip or a big purchase, not long-term retirement-style investing.</p>
           </div>
           ${investorSectionHtml(investorType, 'onboardDisclaimerCheck')}
         </div>
@@ -369,7 +369,7 @@ const screens = [
         <div class="field-label">Fund Type</div>
         <div class="card" style="margin-bottom:16px;">
           <div class="h2" style="font-size:14px; margin-bottom:2px;">${FUND.label} · ${FUND.sub}</div>
-          <p class="muted">${FUND.fixed}% Fixed Income (T-Bills &amp; Treasury Bonds) / ${FUND.equities}% Equities — every barkada goal uses this same fund.</p>
+          <p class="muted">${FUND.fixed}% Fixed Income (T-Bills) / ${FUND.equities}% Equities — every barkada goal uses this same fund.</p>
         </div>
 
         <div class="goal-preview">
@@ -550,8 +550,8 @@ const screens = [
         <div class="switch-row"><span style="font-size:12.5px; font-weight:800;">Advanced view</span><div class="switch on"></div></div>
         <div class="card"><div class="eyebrow">Fixed Income (${moneyExact(fixedValue)} · 70%)</div>
           <div class="holding-row"><div><div class="holding-name">91-Day Treasury Bill</div><div class="holding-sub">PH · T-Bill</div></div><div><div class="holding-val">${moneyExact(fixedValue*0.34)}</div><div class="holding-gain">▲ 0.9%</div></div></div>
-          <div class="holding-row"><div><div class="holding-name">2-Yr Treasury Bond</div><div class="holding-sub">PH · Treasury Bond</div></div><div><div class="holding-val">${moneyExact(fixedValue*0.34)}</div><div class="holding-gain">▲ 1.1%</div></div></div>
-          <div class="holding-row"><div><div class="holding-name">5-Yr Treasury Bond</div><div class="holding-sub">PH · Treasury Bond</div></div><div><div class="holding-val">${moneyExact(fixedValue*0.32)}</div><div class="holding-gain">▲ 1.4%</div></div></div>
+          <div class="holding-row"><div><div class="holding-name">182-Day Treasury Bill</div><div class="holding-sub">PH · T-Bill</div></div><div><div class="holding-val">${moneyExact(fixedValue*0.34)}</div><div class="holding-gain">▲ 1.1%</div></div></div>
+          <div class="holding-row"><div><div class="holding-name">364-Day Treasury Bill</div><div class="holding-sub">PH · T-Bill</div></div><div><div class="holding-val">${moneyExact(fixedValue*0.32)}</div><div class="holding-gain">▲ 1.4%</div></div></div>
         </div>
         <div class="card"><div class="eyebrow">Equities (${moneyExact(equitiesValue)} · 30%)</div>
           <div class="holding-row"><div><div class="holding-name">SM Investments</div><div class="holding-sub">PH · Conglomerate</div></div><div><div class="holding-val">${moneyExact(equitiesValue*0.37)}</div><div class="holding-gain">▲ 3.1%</div></div></div>
